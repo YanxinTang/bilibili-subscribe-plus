@@ -9,4 +9,4 @@
 
 ## 访问
 
-[greasyfork地址](https://greasyfork.org/zh-CN/scripts/30278-bilibili%E8%AE%A2%E9%98%85)
+[greasyfork地址](https://greasyfork.org/zh-CN/scripts/30283-bilibili%E8%AE%A2%E9%98%85)
