@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.1.1
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -9,16 +9,24 @@
 // ==/UserScript==
 
 (function() {
-    'use strict';
+    /**
+     * 如果您想自定义订阅栏目所在的位置，您可以修改 index 变量来实现这一效果
+     * index = 2 : 插入“头像”之后
+     * index = 3 : 插入“消息”之后
+     * index = 4 : 插入“动态”之后
+     * index = 5 : 插入“收藏夹”之后
+     * ...
+     * index = 8 : 投稿
+     */
+    var index = 2;
+
+    // 请勿更改
     var mid = getCookie('DedeUserID');    //从cookie获取用户mid
     var currentPage = 1;                  //定义当前页面为订阅列表第一页
     /*导航栏添加订阅按钮*/
-    $("ul.menu").prepend(`<li id="i_menu_sub_btn" class="u-i" style="display: list-item;">
-                              <a class="i-link" href="//space.bilibili.com/22806885/#!/bangumi">订阅</a>
-                          </li>`
-                        );
+    $("ul.menu>li:nth-child("+index+")").after(`<li id="i_menu_sub_btn" class="u-i" style="display: list-item;"><a class="i-link" href="//space.bilibili.com/`+mid+`/#!/bangumi" target='_blank'>订阅</a></li>`);
     /*订阅按钮添加下拉列表*/
-    $("#i_menu_sub_btn").append(`
+    $("li#i_menu_sub_btn").append(`
         <div class="dyn_wnd" id="subscrptionList">
             <div class="dyn_arrow"></div>
             <div class="dyn_menu">
@@ -54,7 +62,6 @@
     $.getJSON('http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage, function(data){
         var items = [];
         window.pages = data.data.pages;        //将总页数保存在全局变量里
-        console.log(window.pages);
         $.each( data.data.result, function( key, val ) {
             items.push( "<li><a href='"+val.share_url+"'target='_blank'>"+val.title+"</a></li>" );
         });
