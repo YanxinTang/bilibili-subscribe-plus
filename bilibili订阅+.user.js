@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      0.2.1
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -61,9 +61,20 @@
     /*获取订阅列表并添加到dom*/
     $.getJSON('http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage, function(data){
         var items = [];
+        var newestEpisode = '';
         window.pages = data.data.pages;        //将总页数保存在全局变量里
         $.each( data.data.result, function( key, val ) {
-            items.push( "<li><a href='"+val.share_url+"'target='_blank'>"+val.title+"</a></li>" );
+            newestEpisode = (val.is_finish === 0)? val.newest_ep_index : val.total_count;
+            items.push(`
+                <li>
+                    <a href="`+val.share_url+`" style="display:block;" target="_blank">
+                    `+val.title+`
+                    <span class="sp" style="background: #ff8eb3;color: #fff;text-align: center;padding: 0 5px;margin-right: 5px;border-radius: 9px;display: inline-block;height: 18px;line-height: 17px;">
+                    `+newestEpisode+`
+                    </span>
+                    </a>
+                </li>
+            `);
         });
         $( "<ul/>", {
             "class": "",
@@ -77,8 +88,19 @@
             if(currentPage <= window.pages){
                 $.getJSON('http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage, function(data){
                     var items = [];
+                    var newestEpisode = '';
                     $.each( data.data.result, function( key, val ) {
-                        items.push( "<li><a href='"+val.share_url+"'target='_blank'>"+val.title+"</a></li>" );
+                        newestEpisode = (val.is_finish === 0)? val.newest_ep_index : val.total_count;
+                        items.push(`
+                            <li>
+                                <a href="`+val.share_url+`" style="display:block;" target="_blank">
+                                `+val.title+`
+                                <span class="sp" style="background: #ff8eb3;color: #fff;text-align: center;padding: 0 5px;margin-right: 5px;border-radius: 9px;display: inline-block;height: 18px;line-height: 17px;">
+                                `+newestEpisode+`
+                                </span>
+                                </a>
+                            </li>
+                        `);
                     });
                     $( "<ul/>", {
                         "class": "my-new-list",
