@@ -11,4 +11,4 @@
 
 [greasyfork](https://greasyfork.org/zh-CN/scripts/30283-bilibili%E8%AE%A2%E9%98%85)
 
-[githbu](https://github.com/Tangyanxin/Tampermonkey)
+[github](https://github.com/Tangyanxin/Tampermonkey)
