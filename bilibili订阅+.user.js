@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    http://tampermonkey.net/
-// @version      0.2.1
+// @version      0.2.3
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -23,8 +23,10 @@
     // 请勿更改
     var mid = getCookie('DedeUserID');    //从cookie获取用户mid
     var currentPage = 1;                  //定义当前页面为订阅列表第一页
+
+    cssStyleInit();
     /*导航栏添加订阅按钮*/
-    $("ul.menu>li:nth-child("+index+")").after(`<li id="i_menu_sub_btn" class="u-i" style="display: list-item;"><a class="i-link" href="//space.bilibili.com/`+mid+`/#!/bangumi" target='_blank'>订阅</a></li>`);
+    $("ul.menu>li:nth-child("+index+")").after(`<li id="i_menu_sub_btn" class="u-i"><a class="i-link" href="//space.bilibili.com/`+mid+`/#!/bangumi" target='_blank'>订阅</a></li>`);
     /*订阅按钮添加下拉列表*/
     $("li#i_menu_sub_btn").append(`
         <div class="dyn_wnd" id="subscrptionList">
@@ -34,42 +36,20 @@
             </div>
         </div>
     `);
-    var subscrptionList = $("#subscrptionList");        //获取列表dom
-    subscrptionList.css({
-        "width":"180px",
-        "height":"340px",
-        "overflow-y":"auto",
-        "position":"absolute",
-        "top":"42px",
-        "left":"-66px",
-        "border-radius":" 0 0 4px 4px",
-        "display":"none",
-        "background":"#fff",
-        "box-shadow":"rgba(0,0,0,0.16) 0 2px 4px",
-        "text-align":"center",
-        "font-size":"12px",
-        "z-index":"7000"
-    });
-    /*订阅按钮hover事件*/
-    $("#i_menu_sub_btn").hover(
-        function() {
-            subscrptionList.css("display","block");
-        }, 
-        function(){
-            subscrptionList.css("display","none");
-    });
+    var subscrptionList = $("#subscrptionList");        //获取列表节点
+
     /*获取订阅列表并添加到dom*/
     $.getJSON('http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage, function(data){
         var items = [];
-        var newestEpisode = '';
+        var newestEpisode = '';     // 最新集
         window.pages = data.data.pages;        //将总页数保存在全局变量里
         $.each( data.data.result, function( key, val ) {
             newestEpisode = (val.is_finish === 0)? val.newest_ep_index : val.total_count;
             items.push(`
                 <li>
-                    <a href="`+val.share_url+`" style="display:block;" target="_blank">
+                    <a href="`+val.share_url+`" target="_blank">
                     `+val.title+`
-                    <span class="sp" style="background: #ff8eb3;color: #fff;text-align: center;padding: 0 5px;margin-right: 5px;border-radius: 9px;display: inline-block;height: 18px;line-height: 17px;">
+                    <span class="sp">
                     `+newestEpisode+`
                     </span>
                     </a>
@@ -77,25 +57,30 @@
             `);
         });
         $( "<ul/>", {
-            "class": "",
             html: items.join( "" )
         }).appendTo( "#subListMenu" );
     });
-    /*订阅列表绑定scroll事件*/
+    /**
+     * 订阅列表绑定scroll事件
+     * 
+     * 这里设置一个加载标志位：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
+     */
+    var loadingFlag = 1;    // loadingFlag = 1 时允许加载
     subscrptionList.scroll(function(){
-        if($(this).innerHeight()+ $(this).scrollTop() >= $(this)[0].scrollHeight){
+        if($(this).innerHeight()+ $(this).scrollTop() + 50 >= $(this)[0].scrollHeight && loadingFlag == 1){
             currentPage++;
+            loadingFlag = 0;    // loadingFlag = 0 时禁止加载
             if(currentPage <= window.pages){
                 $.getJSON('http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage, function(data){
                     var items = [];
                     var newestEpisode = '';
                     $.each( data.data.result, function( key, val ) {
-                        newestEpisode = (val.is_finish === 0)? val.newest_ep_index : val.total_count;
+                        newestEpisode = (val.is_finish === 0)? val.newest_ep_index : val.total_count;   // 最新集数
                         items.push(`
                             <li>
-                                <a href="`+val.share_url+`" style="display:block;" target="_blank">
+                                <a href="`+val.share_url+`" target="_blank">
                                 `+val.title+`
-                                <span class="sp" style="background: #ff8eb3;color: #fff;text-align: center;padding: 0 5px;margin-right: 5px;border-radius: 9px;display: inline-block;height: 18px;line-height: 17px;">
+                                <span class="sp">
                                 `+newestEpisode+`
                                 </span>
                                 </a>
@@ -103,14 +88,18 @@
                         `);
                     });
                     $( "<ul/>", {
-                        "class": "my-new-list",
+                        "class": "",
                         html: items.join( "" )
                     }).appendTo( "#subListMenu" );
+                    loadingFlag = 1;
                 });
             }
         }
     });
-    /*获取cookie*/
+    /**
+     * 获取cookie
+     * @param {*} cname 
+     */
     function getCookie(cname) {
         var name = cname + "=";
         var decodedCookie = decodeURIComponent(document.cookie);
@@ -126,5 +115,67 @@
         }
         return "";
     }
+    /**
+     * css样式初始化
+     */
+    function cssStyleInit(){
+        // css样式
+        var css = `
+            #i_menu_sub_btn{
+                display: list-item;
+            }
+            #subscrptionList{
+                width: 220px;
+                height: 340px;
+                overflow-y: auto;
+                position: absolute;
+                top: 42px;
+                left: -86px;
+                border-radius:  0 0 4px 4px;
+                visibility: hidden;
+                background: #fff;
+                box-shadow: rgba(0,0,0,0.16) 0 2px 4px;
+                text-align: center;
+                font-size: 12px;
+                z-index: 7000;
+                transition-delay: 0.5s;
+                -moz-transition-delay: 0.5s; /* Firefox 4 */
+                -webkit-transition-delay: 0.5s; /* Safari 和 Chrome */
+                -o-transition-delay: 0.5s; /* Opera */
+            }
+            #i_menu_sub_btn>a:hover + #subscrptionList{
+                visibility: visible;
+                transition-delay: 0.5s;
+                -moz-transition-delay: 0.5s; /* Firefox 4 */
+                -webkit-transition-delay: 0.5s; /* Safari 和 Chrome */
+                -o-transition-delay: 0.5s; /* Opera */
+            }
+            #subscrptionList:hover{
+                visibility: visible;
+            }
+            #subListMenu>ul>li a{
+                display:block;
+            }
+            #subListMenu>ul>li a:hover{
+                color: #00a1d6;
+                background: #e5e9ef;
+            }
+            #subListMenu>ul>li span.sp{
+                background: #ff8eb3;
+                color: #fff;
+                text-align: center;
+                padding: 0 5px;
+                margin-right: 5px;
+                border-radius: 9px;
+                display: inline-block;
+                height: 18px;
+                line-height: 17px;
+            }
+        `;
+        head = document.getElementsByTagName('head')[0];
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'data:text/css,' + escape(css);  // IE needs this escaped
+        head.appendChild(link);
+    }
 })();
-
