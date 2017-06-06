@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    http://tampermonkey.net/
-// @version      0.2.3
+// @version      0.2.4
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -48,9 +48,13 @@
             items.push(`
                 <li>
                     <a href="`+val.share_url+`" target="_blank">
+                    <span class="titleWrapper">
                     `+val.title+`
-                    <span class="sp">
-                    `+newestEpisode+`
+                    </span>
+                    <span class="spWrapper">
+                        <span class="sp">
+                        `+newestEpisode+`
+                        </span>
                     </span>
                     </a>
                 </li>
@@ -79,9 +83,13 @@
                         items.push(`
                             <li>
                                 <a href="`+val.share_url+`" target="_blank">
+                                <span class="titleWrapper">
                                 `+val.title+`
-                                <span class="sp">
-                                `+newestEpisode+`
+                                </span>
+                                <span class="spWrapper">
+                                    <span class="sp">
+                                    `+newestEpisode+`
+                                    </span>
                                 </span>
                                 </a>
                             </li>
@@ -125,17 +133,17 @@
                 display: list-item;
             }
             #subscrptionList{
-                width: 220px;
+                width: 200px;
                 height: 340px;
                 overflow-y: auto;
                 position: absolute;
                 top: 42px;
-                left: -86px;
+                left: -76px;
                 border-radius:  0 0 4px 4px;
                 visibility: hidden;
                 background: #fff;
                 box-shadow: rgba(0,0,0,0.16) 0 2px 4px;
-                text-align: center;
+                text-align: left;
                 font-size: 12px;
                 z-index: 7000;
                 transition-delay: 0.5s;
@@ -153,12 +161,29 @@
             #subscrptionList:hover{
                 visibility: visible;
             }
-            #subListMenu>ul>li a{
-                display:block;
+            #subListMenu>ul>li::after{
+                content:"";
+                display: block;
+                clear: both;
             }
             #subListMenu>ul>li a:hover{
                 color: #00a1d6;
                 background: #e5e9ef;
+            }
+            #subListMenu>ul>li a{
+                height: 42px;
+                display: block;
+            }
+            #subListMenu>ul>li a>.titleWrapper{
+                text-overflow: ellipsis; 
+                overflow: hidden; 
+                white-space: nowrap;
+                display: inline-block;
+                max-width: 120px;
+                padding-left: 10px; 
+            }
+            #subListMenu>ul>li span.spWrapper{
+                float: right;
             }
             #subListMenu>ul>li span.sp{
                 background: #ff8eb3;
@@ -167,7 +192,6 @@
                 padding: 0 5px;
                 margin-right: 5px;
                 border-radius: 9px;
-                display: inline-block;
                 height: 18px;
                 line-height: 17px;
             }
