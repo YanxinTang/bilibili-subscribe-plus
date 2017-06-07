@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
-// @namespace    http://tampermonkey.net/
-// @version      0.2.4
+// @namespace    http://inkbottle.site/
+// @version      0.3.0
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -23,90 +23,149 @@
     // 请勿更改
     var mid = getCookie('DedeUserID');    //从cookie获取用户mid
     var currentPage = 1;                  //定义当前页面为订阅列表第一页
+    var jsonUrl = 'http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
+    
+    cssStyleInit();     // css样式插入
 
-    cssStyleInit();
-    /*导航栏添加订阅按钮*/
-    $("ul.menu>li:nth-child("+index+")").after(`<li id="i_menu_sub_btn" class="u-i"><a class="i-link" href="//space.bilibili.com/`+mid+`/#!/bangumi" target='_blank'>订阅</a></li>`);
-    /*订阅按钮添加下拉列表*/
-    $("li#i_menu_sub_btn").append(`
-        <div class="dyn_wnd" id="subscrptionList">
-            <div class="dyn_arrow"></div>
-            <div class="dyn_menu">
-                <div class="menu" id="subListMenu"></div>
-            </div>
-        </div>
-    `);
-    var subscrptionList = $("#subscrptionList");        //获取列表节点
+    var menu = document.body.querySelectorAll('ul.menu')[0];
+    menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
 
-    /*获取订阅列表并添加到dom*/
-    $.getJSON('http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage, function(data){
-        var items = [];
-        var newestEpisode = '';     // 最新集
-        window.pages = data.data.pages;        //将总页数保存在全局变量里
-        $.each( data.data.result, function( key, val ) {
-            newestEpisode = (val.is_finish === 0)? val.newest_ep_index : val.total_count;
-            items.push(`
-                <li>
-                    <a href="`+val.share_url+`" target="_blank">
-                    <span class="titleWrapper">
-                    `+val.title+`
-                    </span>
-                    <span class="spWrapper">
-                        <span class="sp">
-                        `+newestEpisode+`
-                        </span>
-                    </span>
-                    </a>
-                </li>
-            `);
-        });
-        $( "<ul/>", {
-            html: items.join( "" )
-        }).appendTo( "#subListMenu" );
+    ajaxGet(jsonUrl, function(){
+        var data = JSON.parse( this).data;    //返回数据
+        window.pages = data.pages;        //将总页数保存在全局变量里
+        var ul = document.createElement("ul");
+        data.result.forEach(function(element) {
+            ul.appendChild(createLiNode(element));
+        }, this);
+        document.getElementById('subListMenu').appendChild(ul);
     });
+    
     /**
-     * 订阅列表绑定scroll事件
+     * 滚动列表动态加载
      * 
-     * 这里设置一个加载标志位：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
+     * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
      */
+    var subscrptionList = document.getElementById('subscrptionList');
     var loadingFlag = 1;    // loadingFlag = 1 时允许加载
-    subscrptionList.scroll(function(){
+    subscrptionList.onscroll = function(){
         if($(this).innerHeight()+ $(this).scrollTop() + 50 >= $(this)[0].scrollHeight && loadingFlag == 1){
             currentPage++;
             loadingFlag = 0;    // loadingFlag = 0 时禁止加载
             if(currentPage <= window.pages){
-                $.getJSON('http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage, function(data){
-                    var items = [];
-                    var newestEpisode = '';
-                    $.each( data.data.result, function( key, val ) {
-                        newestEpisode = (val.is_finish === 0)? val.newest_ep_index : val.total_count;   // 最新集数
-                        items.push(`
-                            <li>
-                                <a href="`+val.share_url+`" target="_blank">
-                                <span class="titleWrapper">
-                                `+val.title+`
-                                </span>
-                                <span class="spWrapper">
-                                    <span class="sp">
-                                    `+newestEpisode+`
-                                    </span>
-                                </span>
-                                </a>
-                            </li>
-                        `);
-                    });
-                    $( "<ul/>", {
-                        "class": "",
-                        html: items.join( "" )
-                    }).appendTo( "#subListMenu" );
+                ajaxGet(jsonUrl, function(){
+                    var data = JSON.parse( this).data;    //返回数据
+                    window.pages = data.pages;        //将总页数保存在全局变量里
+                    var ul = document.createElement("ul");
+                    data.result.forEach(function(element) {
+                        ul.appendChild(createLiNode(element));
+                    }, this);
+                    document.getElementById('subListMenu').appendChild(ul);
                     loadingFlag = 1;
                 });
             }
         }
-    });
+    };
+    /**
+     * 生成导航链接按钮
+     */
+    function createMenuSubBtn(){
+        var li = document.createElement("li"),
+            subList = document.createElement("div"),
+            dyn_menu = document.createElement("div"),
+            subListMenu = document.createElement("div");
+        setAttributes(li, {
+            "id": "i_menu_sub_btn",
+            "class": "u-i"
+        });
+        li.appendChild((function(){
+            var a = document.createElement("a");
+            setAttributes(a, {
+                "class": "i-link",
+                "href": "//space.bilibili.com/"+mid+"/#!/bangumi",
+                "target": "_blank",
+            });
+            a.appendChild(document.createTextNode('订阅'));
+            return a;
+        })());
+        setAttributes(subList, {
+            "id": "subscrptionList",
+            "class": "dyn_wnd"
+        });
+        dyn_menu.setAttribute("class", "dyn_menu");
+        setAttributes(subListMenu, {
+            "id": "subListMenu",
+            "class": "menu"
+        });
+        dyn_menu.appendChild(subListMenu);
+        subList.appendChild(dyn_menu);
+        li.appendChild(subList);
+        return li;
+    }
+    /**
+     * 生成番剧列表li节点
+     * @param {object} data // 番剧详细数据
+     */
+    function createLiNode(data){
+        var li = document.createElement("li");
+        // 番剧链接
+        li.appendChild((function(){
+            var a = document.createElement("a");
+            setAttributes(a, {
+                "href": data.share_url,
+                "target": "_blank"
+            });
+            // 链接文字
+            a.appendChild((function(){
+                var titleWrapper = document.createElement("span");
+                titleWrapper.setAttribute("class", "titleWrapper");
+                titleWrapper.appendChild(document.createTextNode(data.title));
+                return titleWrapper;
+            })());
+            // 链接集数标签
+            a.appendChild((function(){
+                var spWrapper = document.createElement("span");
+                // 这个wrapper是为了让tag右浮且垂直居中
+                spWrapper.setAttribute("class", "spWrapper");
+                spWrapper.appendChild((function(){
+                    var sp = document.createElement("span");
+                    sp.setAttribute("class", "sp");
+                    sp.appendChild(document.createTextNode((data.is_finish === 0)? data.newest_ep_index : data.total_count));
+                    return sp;
+                })());  // spWrapper.appendChild End
+                return spWrapper;
+            })());  // a.appendChild End
+                return a;
+        })()); // li.appendChild End
+        return li;
+    }
+    /**
+     * 设置节点属性值
+     * @param {object} el 
+     * @param {array} attrs 
+     */
+    function setAttributes(el, attrs) {
+        for(var key in attrs) {
+            el.setAttribute(key, attrs[key]);
+        }
+    }
+    /**
+     * ajax 获取数据
+     * @param {string} url 
+     * @param {*} callback 
+     */
+    function ajaxGet(url, callback){
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                callback.call(this.responseText);
+            }
+        };
+        xhttp.open("GET", url, true);
+        xhttp.send();
+    }
     /**
      * 获取cookie
-     * @param {*} cname 
+     * @param {string} cname 
      */
     function getCookie(cname) {
         var name = cname + "=";
