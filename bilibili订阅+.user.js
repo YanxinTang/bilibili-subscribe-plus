@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    http://inkbottle.site/
-// @version      0.3.0
+// @version      0.3.1
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -50,6 +50,7 @@
     subscrptionList.onscroll = function(){
         if($(this).innerHeight()+ $(this).scrollTop() + 50 >= $(this)[0].scrollHeight && loadingFlag == 1){
             currentPage++;
+            jsonUrl = 'http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
             loadingFlag = 0;    // loadingFlag = 0 时禁止加载
             if(currentPage <= window.pages){
                 ajaxGet(jsonUrl, function(){
