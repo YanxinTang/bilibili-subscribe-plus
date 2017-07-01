@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    http://inkbottle.site/
-// @version      0.3.2
+// @version      0.3.3
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -130,7 +130,18 @@
                 spWrapper.appendChild((function(){
                     var sp = document.createElement("span");
                     sp.setAttribute("class", "sp");
-                    sp.appendChild(document.createTextNode((data.is_finish === 0)? data.newest_ep_index : data.total_count));
+                    var spanText;   //标签内容
+                    if(data.is_finish === 0){
+                        if(data.newest_ep_index === -1){
+                            spanText = '未放送';
+                        }else{
+                            //有的番剧的total_count会成为-1， 所以出现这种情况就不保留total_count了
+                            spanText = (data.total_count === -1)? data.newest_ep_index: data.newest_ep_index+'/'+data.total_count;
+                        }
+                    }else{
+                        spanText = data.total_count+'集全';
+                    }
+                    sp.appendChild(document.createTextNode(spanText));
                     return sp;
                 })());  // spWrapper.appendChild End
                 return spWrapper;
