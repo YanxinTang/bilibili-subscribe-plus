@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    http://inkbottle.site/
-// @version      0.3.1
+// @version      0.3.2
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       inkbottle
 // @match        http://*.bilibili.com/*
@@ -162,6 +162,7 @@
             }
         };
         xhttp.open("GET", url, true);
+        xhttp.withCredentials = true;
         xhttp.send();
     }
     /**
