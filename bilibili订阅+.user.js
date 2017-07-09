@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         bilibili订阅+
-// @namespace    http://inkbottle.site/
-// @version      0.3.3
+// @namespace    https://tangxin.me/
+// @version      0.3.4
 // @description  bilibili导航添加订阅按钮以及订阅列表
-// @author       inkbottle
+// @author       vector
 // @match        http://*.bilibili.com/*
 // @grant        none
 // ==/UserScript==
@@ -22,6 +22,8 @@
 
     // 请勿更改
     var mid = getCookie('DedeUserID');    //从cookie获取用户mid
+    if(mid === -1) return console.log("请登陆后使用");
+
     var currentPage = 1;                  //定义当前页面为订阅列表第一页
     var jsonUrl = 'http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
     
@@ -193,7 +195,7 @@
                 return c.substring(name.length, c.length);
             }
         }
-        return "";
+        return -1;  // 没有cookie返回-1
     }
     /**
      * css样式初始化
