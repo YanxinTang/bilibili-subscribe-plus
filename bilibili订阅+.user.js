@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.4
+// @version      0.3.5
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @match        http://*.bilibili.com/*
@@ -25,7 +25,7 @@
     if(mid === -1) return console.log("请登陆后使用");
 
     var currentPage = 1;                  //定义当前页面为订阅列表第一页
-    var jsonUrl = 'http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
+    var jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
     
     cssStyleInit();     // css样式插入
 
@@ -52,7 +52,7 @@
     subscrptionList.onscroll = function(){
         if($(this).innerHeight()+ $(this).scrollTop() + 50 >= $(this)[0].scrollHeight && loadingFlag == 1){
             currentPage++;
-            jsonUrl = 'http://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
+            jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
             loadingFlag = 0;    // loadingFlag = 0 时禁止加载
             if(currentPage <= window.pages){
                 ajaxGet(jsonUrl, function(){
