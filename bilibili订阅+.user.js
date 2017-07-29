@@ -4,7 +4,7 @@
 // @version      0.3.5
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
-// @match        http://*.bilibili.com/*
+// @match        *.bilibili.com/*
 // @grant        none
 // ==/UserScript==
 
