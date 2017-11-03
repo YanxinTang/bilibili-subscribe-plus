@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.6
+// @version      0.3.7
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @match        *.bilibili.com/*
@@ -18,8 +18,9 @@
      * ...
      * index = 8 : 投稿
      */
-    var index = 2;
 
+    window.setTimeout(function () {
+    var index = 2;
     // 请勿更改
     var mid = getCookie('DedeUserID');    //从cookie获取用户mid
     if(mid === -1) return console.log("请登陆后使用");
@@ -28,8 +29,8 @@
     var jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
     
     cssStyleInit();     // css样式插入
-
-    var menu = document.body.querySelectorAll('ul.menu')[0];
+    var menu = document.body.querySelectorAll("ul.fr")[0];
+    console.log(menu);
     menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
 
     ajaxGet(jsonUrl, function(){
@@ -72,18 +73,18 @@
      * 生成导航链接按钮
      */
     function createMenuSubBtn(){
-        var li = document.createElement("li"),
-            subList = document.createElement("div"),
-            dyn_menu = document.createElement("div"),
-            subListMenu = document.createElement("div");
+        var li = document.createElement("li");
+        var subList = document.createElement("div");
+        var dyn_menu = document.createElement("div");
+        var subListMenu = document.createElement("div");
         setAttributes(li, {
             "id": "i_menu_sub_btn",
-            "class": "u-i"
+            "class": "nav-item"
         });
         li.appendChild((function(){
             var a = document.createElement("a");
             setAttributes(a, {
-                "class": "i-link",
+                "class": "t",
                 "href": "//space.bilibili.com/"+mid+"/#!/bangumi",
                 "target": "_blank",
             });
@@ -245,6 +246,7 @@
                 background: #e5e9ef;
             }
             #subListMenu>ul>li a{
+                color: #222;
                 height: 42px;
                 display: block;
             }
@@ -275,5 +277,7 @@
         link.rel = 'stylesheet';
         link.href = 'data:text/css,' + escape(css);  // IE needs this escaped
         head.appendChild(link);
+    
     }
+    }, 10);
 })();
