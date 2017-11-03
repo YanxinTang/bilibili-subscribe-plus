@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.7
+// @version      0.3.8
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @match        *.bilibili.com/*
@@ -30,7 +30,6 @@
     
     cssStyleInit();     // css样式插入
     var menu = document.body.querySelectorAll("ul.fr")[0];
-    console.log(menu);
     menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
 
     ajaxGet(jsonUrl, function(){
