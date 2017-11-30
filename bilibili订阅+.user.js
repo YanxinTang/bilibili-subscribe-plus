@@ -278,5 +278,5 @@
         head.appendChild(link);
     
     }
-    }, 10);
+    }, 50);
 })();
