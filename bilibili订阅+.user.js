@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.8
+// @version      0.3.9
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @match        *.bilibili.com/*
