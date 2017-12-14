@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.9
+// @version      0.3.10
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
-// @match        *.bilibili.com/*
-// @grant        none
+// @include      *.bilibili.com/*
+// @grant        GM.xmlHttpRequest
 // ==/UserScript==
 
 (function() {
@@ -32,8 +32,8 @@
     var menu = document.body.querySelectorAll("ul.fr")[0];
     menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
 
-    ajaxGet(jsonUrl, function(){
-        var data = JSON.parse( this).data;    //返回数据
+    ajaxGet(jsonUrl, function(result){
+        var data = JSON.parse(result).data;    //返回数据
         window.pages = data.pages;        //将总页数保存在全局变量里
         var ul = document.createElement("ul");
         data.result.forEach(function(element) {
@@ -50,13 +50,13 @@
     var subscrptionList = document.getElementById('subscrptionList');
     var loadingFlag = 1;    // loadingFlag = 1 时允许加载
     subscrptionList.onscroll = function(){
-        if($(this).innerHeight()+ $(this).scrollTop() + 50 >= $(this)[0].scrollHeight && loadingFlag == 1){
+        if(this.clientHeight+ this.scrollTop + 50 >= this.scrollHeight && loadingFlag == 1){
             currentPage++;
             jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
             loadingFlag = 0;    // loadingFlag = 0 时禁止加载
             if(currentPage <= window.pages){
-                ajaxGet(jsonUrl, function(){
-                    var data = JSON.parse( this).data;    //返回数据
+                ajaxGet(jsonUrl, function(result){
+                    var data = JSON.parse(result).data;    //返回数据
                     window.pages = data.pages;        //将总页数保存在全局变量里
                     var ul = document.createElement("ul");
                     data.result.forEach(function(element) {
@@ -168,15 +168,27 @@
      * @param {*} callback 
      */
     function ajaxGet(url, callback){
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                callback.call(this.responseText);
-            }
-        };
-        xhttp.open("GET", url, true);
-        xhttp.withCredentials = true;
-        xhttp.send();
+        if(typeof GM === "undefined"){
+            // Tampermonkey 下面GM为 undefined
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    callback(this.responseText);
+                }
+            };
+            xhttp.withCredentials = true;
+            xhttp.open("GET", url, true);
+            xhttp.send();
+        }else{
+            // Greasemonkey
+            GM.xmlHttpRequest({
+                method: "GET",
+                url: url,
+                onload: function(response) {
+                    callback(response.responseText);
+                }
+            });
+        }
     }
     /**
      * 获取cookie
@@ -276,7 +288,6 @@
         link.rel = 'stylesheet';
         link.href = 'data:text/css,' + escape(css);  // IE needs this escaped
         head.appendChild(link);
-    
     }
-    }, 50);
+    }, 100);
 })();
