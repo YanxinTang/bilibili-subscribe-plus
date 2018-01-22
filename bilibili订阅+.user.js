@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.10
+// @version      0.3.12
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -117,38 +117,36 @@
                 "href": data.share_url,
                 "target": "_blank"
             });
-            // 链接文字
-            a.appendChild((function(){
-                var titleWrapper = document.createElement("span");
-                titleWrapper.setAttribute("class", "titleWrapper");
-                titleWrapper.appendChild(document.createTextNode(data.title));
-                return titleWrapper;
-            })());
+            var cover = document.createElement('img');
+            setAttributes(cover,{
+                "class": "cover",
+                "src": data.cover
+            });
+            // 番剧链接文字
+            var titleWrapper = document.createElement("span");
+            titleWrapper.setAttribute("class", "titleWrapper");
+            titleWrapper.appendChild(document.createTextNode(data.title));
+
             // 链接集数标签
-            a.appendChild((function(){
-                var spWrapper = document.createElement("span");
-                // 这个wrapper是为了让tag右浮且垂直居中
-                spWrapper.setAttribute("class", "spWrapper");
-                spWrapper.appendChild((function(){
-                    var sp = document.createElement("span");
-                    sp.setAttribute("class", "sp");
-                    var spanText;   //标签内容
-                    if(data.is_finish === 0){
-                        if(data.newest_ep_index === -1){
-                            spanText = '未放送';
-                        }else{
-                            //有的番剧的total_count会成为-1， 所以出现这种情况就不保留total_count了
-                            spanText = (data.total_count === -1)? data.newest_ep_index: data.newest_ep_index+'/'+data.total_count;
-                        }
-                    }else{
-                        spanText = data.total_count+'集全';
-                    }
-                    sp.appendChild(document.createTextNode(spanText));
-                    return sp;
-                })());  // spWrapper.appendChild End
-                return spWrapper;
-            })());  // a.appendChild End
-                return a;
+            var sp = document.createElement("span");
+            sp.setAttribute("class", "sp");
+            var spanText;   //标签内容
+            if(data.is_finish === 0){
+                if(data.newest_ep_index === -1){
+                    spanText = '未放送';
+                }else{
+                    //有的番剧的total_count会成为-1， 所以出现这种情况就不保留total_count了
+                    spanText = (data.total_count === -1)? data.newest_ep_index: data.newest_ep_index+'/'+data.total_count;
+                }
+            }else{
+                spanText = data.total_count+'集全';
+            }
+            sp.appendChild(document.createTextNode(spanText));
+            
+            a.appendChild(cover);
+            a.appendChild(titleWrapper);
+            a.appendChild(sp);
+            return a;
         })()); // li.appendChild End
         return li;
     }
@@ -219,7 +217,7 @@
                 display: list-item;
             }
             #subscrptionList{
-                width: 200px;
+                width: 250px;
                 height: 340px;
                 overflow-y: auto;
                 position: absolute;
@@ -247,10 +245,8 @@
             #subscrptionList:hover{
                 visibility: visible;
             }
-            #subListMenu>ul>li::after{
-                content:"";
-                display: block;
-                clear: both;
+            #subListMenu>ul>li{
+                overflow-y: hidden;
             }
             #subListMenu>ul>li a:hover{
                 color: #00a1d6;
@@ -259,18 +255,25 @@
             #subListMenu>ul>li a{
                 color: #222;
                 height: 42px;
-                display: block;
+                width: 100%;
+                display: inline-flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+            }
+            #subListMenu>ul>li .cover{
+                width: 40px;
             }
             #subListMenu>ul>li a>.titleWrapper{
                 text-overflow: ellipsis; 
-                overflow: hidden; 
+                overflow-x: hidden; 
                 white-space: nowrap;
                 display: inline-block;
                 max-width: 120px;
                 padding-left: 10px; 
             }
             #subListMenu>ul>li span.spWrapper{
-                float: right;
+                margin-left: auto;
             }
             #subListMenu>ul>li span.sp{
                 background: #ff8eb3;
@@ -278,9 +281,10 @@
                 text-align: center;
                 padding: 0 5px;
                 margin-right: 5px;
+                margin-left: auto;
                 border-radius: 9px;
                 height: 18px;
-                line-height: 17px;
+                line-height: 18px;
             }
         `;
         head = document.getElementsByTagName('head')[0];
