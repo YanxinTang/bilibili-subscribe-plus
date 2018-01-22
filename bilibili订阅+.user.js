@@ -19,22 +19,61 @@
      * index = 8 : 投稿
      */
 
-    window.setTimeout(function () {
     var index = 2;
     // 请勿更改
     var mid = getCookie('DedeUserID');    //从cookie获取用户mid
+    var pages;
     if(mid === -1) return console.log("请登陆后使用");
 
     var currentPage = 1;                  //定义当前页面为订阅列表第一页
     var jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
     
     cssStyleInit();     // css样式插入
-    var menu = document.body.querySelectorAll("ul.fr")[0];
-    menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
+    var bilibili_wrapper = document.querySelector('div.bili-wrapper');
+    var observer = new MutationObserver(function (mutations, observer) {
+        mutations.forEach(function(mutation) {
+            try{
+                var menu = mutation.addedNodes[0].querySelector('ul.fr');
+                menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
+                /**
+                 * 滚动列表动态加载
+                 * 
+                 * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
+                 */
+                var subscrptionList = document.getElementById('subscrptionList');
+                var loadingFlag = 1;    // loadingFlag = 1 时允许加载
+                subscrptionList.onscroll = function(){
+                    if(this.clientHeight+ this.scrollTop + 50 >= this.scrollHeight && loadingFlag == 1){
+                        currentPage++;
+                        jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
+                        loadingFlag = 0;    // loadingFlag = 0 时禁止加载
+                        if(currentPage <= pages){
+                            ajaxGet(jsonUrl, function(result){
+                                var data = JSON.parse(result).data;    //返回数据
+                                pages = data.pages;        //将总页数保存在全局变量里
+                                var ul = document.createElement("ul");
+                                data.result.forEach(function(element) {
+                                    ul.appendChild(createLiNode(element));
+                                }, this);
+                                document.getElementById('subListMenu').appendChild(ul);
+                                loadingFlag = 1;
+                            });
+                        }
+                    }
+                };
+            }catch(e){
+                console.log(e);
+            }
+        });
+    });
+    observer.observe(bilibili_wrapper, {
+        'childList': true
+    });
+    
 
     ajaxGet(jsonUrl, function(result){
         var data = JSON.parse(result).data;    //返回数据
-        window.pages = data.pages;        //将总页数保存在全局变量里
+        pages = data.pages;        //将总页数保存在全局变量里
         var ul = document.createElement("ul");
         data.result.forEach(function(element) {
             ul.appendChild(createLiNode(element));
@@ -42,32 +81,7 @@
         document.getElementById('subListMenu').appendChild(ul);
     });
     
-    /**
-     * 滚动列表动态加载
-     * 
-     * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
-     */
-    var subscrptionList = document.getElementById('subscrptionList');
-    var loadingFlag = 1;    // loadingFlag = 1 时允许加载
-    subscrptionList.onscroll = function(){
-        if(this.clientHeight+ this.scrollTop + 50 >= this.scrollHeight && loadingFlag == 1){
-            currentPage++;
-            jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
-            loadingFlag = 0;    // loadingFlag = 0 时禁止加载
-            if(currentPage <= window.pages){
-                ajaxGet(jsonUrl, function(result){
-                    var data = JSON.parse(result).data;    //返回数据
-                    window.pages = data.pages;        //将总页数保存在全局变量里
-                    var ul = document.createElement("ul");
-                    data.result.forEach(function(element) {
-                        ul.appendChild(createLiNode(element));
-                    }, this);
-                    document.getElementById('subListMenu').appendChild(ul);
-                    loadingFlag = 1;
-                });
-            }
-        }
-    };
+    
     /**
      * 生成导航链接按钮
      */
@@ -246,7 +260,7 @@
                 visibility: visible;
             }
             #subListMenu>ul>li{
-                overflow-y: hidden;
+                max-height: 42px;
             }
             #subListMenu>ul>li a:hover{
                 color: #00a1d6;
@@ -262,7 +276,10 @@
                 align-items: center;
             }
             #subListMenu>ul>li .cover{
-                width: 40px;
+                width: 30px;
+                height: 40px;
+                border-radius: 3px;
+                margin-left: 12px;
             }
             #subListMenu>ul>li a>.titleWrapper{
                 text-overflow: ellipsis; 
@@ -293,5 +310,4 @@
         link.href = 'data:text/css,' + escape(css);  // IE needs this escaped
         head.appendChild(link);
     }
-    }, 100);
 })();
