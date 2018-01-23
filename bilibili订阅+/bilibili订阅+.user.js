@@ -6,6 +6,7 @@
 // @author       vector
 // @include      *.bilibili.com/*
 // @grant        GM.xmlHttpRequest
+// @license MIT
 // ==/UserScript==
 
 (function() {
