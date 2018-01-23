@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.12
+// @version      0.3.13
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -35,14 +35,23 @@
             try{
                 var menu = mutation.addedNodes[0].querySelector('ul.fr');
                 menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
+                // 从api加载第一页的内容
+                ajaxGet(jsonUrl, function(result){
+                    var data = JSON.parse(result).data;    //返回数据
+                    pages = data.pages;        //将总页数保存
+                    var ul = document.getElementById('sub-list');
+                    data.result.forEach(function(element) {
+                        ul.appendChild(createLiNode(element));
+                    }, this);
+                });
                 /**
                  * 滚动列表动态加载
                  * 
                  * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
                  */
-                var subscrptionList = document.getElementById('subscrptionList');
+                var subListWrapper = document.getElementById('sub-list-wrapper');
                 var loadingFlag = 1;    // loadingFlag = 1 时允许加载
-                subscrptionList.onscroll = function(){
+                subListWrapper.onscroll = function(){
                     if(this.clientHeight+ this.scrollTop + 50 >= this.scrollHeight && loadingFlag == 1){
                         currentPage++;
                         jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
@@ -50,12 +59,10 @@
                         if(currentPage <= pages){
                             ajaxGet(jsonUrl, function(result){
                                 var data = JSON.parse(result).data;    //返回数据
-                                pages = data.pages;        //将总页数保存在全局变量里
-                                var ul = document.createElement("ul");
+                                var ul = document.getElementById('sub-list');
                                 data.result.forEach(function(element) {
                                     ul.appendChild(createLiNode(element));
                                 }, this);
-                                document.getElementById('subListMenu').appendChild(ul);
                                 loadingFlag = 1;
                             });
                         }
@@ -69,53 +76,39 @@
     observer.observe(bilibili_wrapper, {
         'childList': true
     });
-    
-
-    ajaxGet(jsonUrl, function(result){
-        var data = JSON.parse(result).data;    //返回数据
-        pages = data.pages;        //将总页数保存在全局变量里
-        var ul = document.createElement("ul");
-        data.result.forEach(function(element) {
-            ul.appendChild(createLiNode(element));
-        }, this);
-        document.getElementById('subListMenu').appendChild(ul);
-    });
-    
-    
     /**
      * 生成导航链接按钮
      */
     function createMenuSubBtn(){
         var li = document.createElement("li");
         var subList = document.createElement("div");
-        var dyn_menu = document.createElement("div");
-        var subListMenu = document.createElement("div");
+        var subLink = document.createElement("a");
+        var ul = document.createElement("ul");
         setAttributes(li, {
             "id": "i_menu_sub_btn",
             "class": "nav-item"
         });
-        li.appendChild((function(){
-            var a = document.createElement("a");
-            setAttributes(a, {
-                "class": "t",
-                "href": "//space.bilibili.com/"+mid+"/#!/bangumi",
-                "target": "_blank",
-            });
-            a.appendChild(document.createTextNode('订阅'));
-            return a;
-        })());
+        setAttributes(subLink, {
+            "class": "t",
+            "href": "//space.bilibili.com/"+mid+"/#!/bangumi",
+            "target": "_blank",
+        });
+        subLink.appendChild(document.createTextNode('订阅'));
+        li.appendChild(subLink);
         setAttributes(subList, {
-            "id": "subscrptionList",
+            "id": "sub-list-wrapper",
             "class": "dyn_wnd"
         });
-        dyn_menu.setAttribute("class", "dyn_menu");
-        setAttributes(subListMenu, {
-            "id": "subListMenu",
-            "class": "menu"
-        });
-        dyn_menu.appendChild(subListMenu);
-        subList.appendChild(dyn_menu);
+        ul.setAttribute('id', 'sub-list');
+        subList.appendChild(ul);
         li.appendChild(subList);
+
+        subLink.onmousemove = function(){
+            subList.classList.add("fade-active");
+        }
+        subList.onmouseleave = function(){
+            subList.classList.remove("fade-active");
+        }
         return li;
     }
     /**
@@ -230,43 +223,36 @@
             #i_menu_sub_btn{
                 display: list-item;
             }
-            #subscrptionList{
+            #sub-list-wrapper{
                 width: 250px;
                 height: 340px;
                 overflow-y: auto;
                 position: absolute;
-                top: 42px;
-                left: -76px;
+                top: 46px;
+                left: -101px;
                 border-radius:  0 0 4px 4px;
                 visibility: hidden;
+                opacity: 0;
                 background: #fff;
                 box-shadow: rgba(0,0,0,0.16) 0 2px 4px;
                 text-align: left;
                 font-size: 12px;
                 z-index: 7000;
-                transition-delay: 0.5s;
-                -moz-transition-delay: 0.5s; /* Firefox 4 */
-                -webkit-transition-delay: 0.5s; /* Safari 和 Chrome */
-                -o-transition-delay: 0.5s; /* Opera */
+                transition: all .3s ease-out .25s;
             }
-            #i_menu_sub_btn>a:hover + #subscrptionList{
+            #sub-list-wrapper.fade-active:hover,#i_menu_sub_btn>a:hover + #sub-list-wrapper{
                 visibility: visible;
-                transition-delay: 0.5s;
-                -moz-transition-delay: 0.5s; /* Firefox 4 */
-                -webkit-transition-delay: 0.5s; /* Safari 和 Chrome */
-                -o-transition-delay: 0.5s; /* Opera */
+                opacity: 1;
+                top: 42px;
             }
-            #subscrptionList:hover{
-                visibility: visible;
-            }
-            #subListMenu>ul>li{
+            #sub-list-wrapper>ul>li{
                 max-height: 42px;
             }
-            #subListMenu>ul>li a:hover{
+            #sub-list-wrapper>ul>li a:hover{
                 color: #00a1d6;
                 background: #e5e9ef;
             }
-            #subListMenu>ul>li a{
+            #sub-list-wrapper>ul>li a{
                 color: #222;
                 height: 42px;
                 width: 100%;
@@ -275,13 +261,13 @@
                 justify-content: flex-start;
                 align-items: center;
             }
-            #subListMenu>ul>li .cover{
+            #sub-list-wrapper>ul>li .cover{
                 width: 30px;
                 height: 40px;
                 border-radius: 3px;
-                margin-left: 12px;
+                margin-left: 8px;
             }
-            #subListMenu>ul>li a>.titleWrapper{
+            #sub-list-wrapper>ul>li a>.titleWrapper{
                 text-overflow: ellipsis; 
                 overflow-x: hidden; 
                 white-space: nowrap;
@@ -289,10 +275,10 @@
                 max-width: 120px;
                 padding-left: 10px; 
             }
-            #subListMenu>ul>li span.spWrapper{
+            #sub-list-wrapper>ul>li span.spWrapper{
                 margin-left: auto;
             }
-            #subListMenu>ul>li span.sp{
+            #sub-list-wrapper>ul>li span.sp{
                 background: #ff8eb3;
                 color: #fff;
                 text-align: center;
