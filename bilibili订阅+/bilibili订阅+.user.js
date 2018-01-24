@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.13
+// @version      0.3.14
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -53,7 +53,7 @@
                 var subListWrapper = document.getElementById('sub-list-wrapper');
                 var loadingFlag = 1;    // loadingFlag = 1 时允许加载
                 subListWrapper.onscroll = function(){
-                    if(this.clientHeight+ this.scrollTop + 50 >= this.scrollHeight && loadingFlag == 1){
+                    if(this.clientHeight+ this.scrollTop + 150 >= this.scrollHeight && loadingFlag == 1){
                         currentPage++;
                         jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
                         loadingFlag = 0;    // loadingFlag = 0 时禁止加载
