@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.15
+// @version      0.3.16
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -23,11 +23,11 @@
     var index = 2;
     // 请勿更改
     var mid = getCookie('DedeUserID');    //从cookie获取用户mid
-    var pages;
+    var pages;                     // 总页数
+    var page = 1;                  // 待请求页数，默认为第一页
     if(mid === -1) return console.log("请登陆后使用");
 
-    var currentPage = 1;                  //定义当前页面为订阅列表第一页
-    var jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
+    // var jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
     
     cssStyleInit();     // css样式插入
     var bilibili_wrapper = document.querySelector('div.bili-wrapper');
@@ -37,7 +37,7 @@
                 var menu = mutation.addedNodes[0].querySelector('ul.fr');
                 menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
                 // 从api加载第一页的内容
-                ajaxGet(jsonUrl, function(result){
+                ajaxGet(getJsonUrl(mid, page), function(result){
                     var data = JSON.parse(result).data;    //返回数据
                     pages = data.pages;        //将总页数保存
                     var ul = document.getElementById('sub-list');
@@ -54,10 +54,10 @@
                 var loadingFlag = 1;    // loadingFlag = 1 时允许加载
                 subListWrapper.onscroll = function(){
                     if(this.clientHeight+ this.scrollTop + 150 >= this.scrollHeight && loadingFlag == 1){
-                        currentPage++;
+                        page++;
                         loadingFlag = 0;    // loadingFlag = 0 时禁止加载
-                        if(currentPage <= pages){
-                            ajaxGet(jsonUrl, function(result){
+                        if(page <= pages){
+                            ajaxGet(getJsonUrl(mid, page), function(result){
                                 var data = JSON.parse(result).data;    //返回数据
                                 var ul = document.getElementById('sub-list');
                                 data.result.forEach(function(element) {
@@ -76,6 +76,17 @@
     observer.observe(bilibili_wrapper, {
         'childList': true
     });
+    /**
+     * 获取番剧列表api地址
+     * 
+     * @param {any} mid 
+     * @param {any} page 
+     * @returns 
+     */
+    function getJsonUrl(mid, page) {
+        page = page || 1;
+        return '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+page;
+    }
     /**
      * 生成导航链接按钮
      */
