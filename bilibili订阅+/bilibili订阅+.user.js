@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.16
+// @version      0.3.17
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -85,7 +85,7 @@
      */
     function getJsonUrl(mid, page) {
         page = page || 1;
-        return '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+page;
+        return 'https://space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+page;
     }
     /**
      * 生成导航链接按钮
