@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.18
+// @version      0.3.19
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -31,11 +31,11 @@
     // var jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
     
     cssStyleInit();     // css样式插入
-    var bilibili_wrapper = document.querySelector('div.bili-wrapper');
+    var bilibili_wrapper = document.querySelector('div.nav-con.fr');
     var observer = new MutationObserver(function (mutations, observer) {
         mutations.forEach(function(mutation) {
             try{
-                var menu = mutation.addedNodes[0].querySelector('ul.fr');
+                var menu = mutation.addedNodes[0];
                 menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
                 // 从api加载第一页的内容
                 ajaxGet(getJsonUrl(mid, page), function(result){
