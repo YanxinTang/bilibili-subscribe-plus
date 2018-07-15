@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.20
+// @version      0.3.21
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -36,53 +36,14 @@
 
     if(ul !== undefined){
         ul.insertBefore(createMenuSubBtn(), ul.childNodes[index+1]);
-        console.log(ul.childNodes[0]);
-        ajaxGet(getJsonUrl(mid, page), function(result){
-            var data = JSON.parse(result).data;    //返回数据
-            pages = data.pages;        //将总页数保存
-            var ul = document.getElementById('sub-list');
-            data.result.forEach(function(element) {
-                ul.appendChild(createLiNode(element));
-            }, this);
-        });
+        genSubList()
     }else{
         var observer = new MutationObserver(function (mutations, observer) {
             mutations.forEach(function(mutation) {
                 try{
                     var ul = mutation.addedNodes[0];
                     ul.insertBefore(createMenuSubBtn(), ul.childNodes[index]);
-                    // 从api加载第一页的内容
-                    ajaxGet(getJsonUrl(mid, page), function(result){
-                        var data = JSON.parse(result).data;    //返回数据
-                        pages = data.pages;        //将总页数保存
-                        var ul = document.getElementById('sub-list');
-                        data.result.forEach(function(element) {
-                            ul.appendChild(createLiNode(element));
-                        }, this);
-                    });
-                    /**
-                     * 滚动列表动态加载
-                     *
-                     * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
-                     */
-                    var subListWrapper = document.getElementById('sub-list-wrapper');
-                    var loadingFlag = 1;    // loadingFlag = 1 时允许加载
-                    subListWrapper.onscroll = function(){
-                        if(this.clientHeight+ this.scrollTop + 150 >= this.scrollHeight && loadingFlag == 1){
-                            page++;
-                            loadingFlag = 0;    // loadingFlag = 0 时禁止加载
-                            if(page <= pages){
-                                ajaxGet(getJsonUrl(mid, page), function(result){
-                                    var data = JSON.parse(result).data;    //返回数据
-                                    var ul = document.getElementById('sub-list');
-                                    data.result.forEach(function(element) {
-                                        ul.appendChild(createLiNode(element));
-                                    }, this);
-                                    loadingFlag = 1;
-                                });
-                            }
-                        }
-                    };
+                    genSubList();
                 }catch(e){
                     console.log(e);
                 }
@@ -91,6 +52,41 @@
         observer.observe(bilibili_wrapper, {
             'childList': true
         });
+    }
+    function genSubList(){
+        
+        // 从api加载第一页的内容
+        ajaxGet(getJsonUrl(mid, page), function(result){
+            var data = JSON.parse(result).data;    //返回数据
+            pages = data.pages;        //将总页数保存
+            var ul = document.getElementById('sub-list');
+            data.result.forEach(function(element) {
+                ul.appendChild(createLiNode(element));
+            }, this);
+        });
+        /**
+         * 滚动列表动态加载
+         *
+         * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
+         */
+        var subListWrapper = document.getElementById('sub-list-wrapper');
+        var loadingFlag = 1;    // loadingFlag = 1 时允许加载
+        subListWrapper.onscroll = function(){
+            if(this.clientHeight+ this.scrollTop + 150 >= this.scrollHeight && loadingFlag == 1){
+                page++;
+                loadingFlag = 0;    // loadingFlag = 0 时禁止加载
+                if(page <= pages){
+                    ajaxGet(getJsonUrl(mid, page), function(result){
+                        var data = JSON.parse(result).data;    //返回数据
+                        var ul = document.getElementById('sub-list');
+                        data.result.forEach(function(element) {
+                            ul.appendChild(createLiNode(element));
+                        }, this);
+                        loadingFlag = 1;
+                    });
+                }
+            }
+        };
     }
     /**
      * 获取番剧列表api地址
