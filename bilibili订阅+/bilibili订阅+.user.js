@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://tangxin.me/
-// @version      0.3.19
+// @version      0.3.20
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       vector
 // @include      *.bilibili.com/*
@@ -29,60 +29,75 @@
     if(mid === -1) return console.log("请登陆后使用");
 
     // var jsonUrl = '//space.bilibili.com/ajax/Bangumi/getList?mid='+mid+'&page='+currentPage;
-    
+
     cssStyleInit();     // css样式插入
     var bilibili_wrapper = document.querySelector('div.nav-con.fr');
-    var observer = new MutationObserver(function (mutations, observer) {
-        mutations.forEach(function(mutation) {
-            try{
-                var menu = mutation.addedNodes[0];
-                menu.insertBefore(createMenuSubBtn(), menu.childNodes[index]);
-                // 从api加载第一页的内容
-                ajaxGet(getJsonUrl(mid, page), function(result){
-                    var data = JSON.parse(result).data;    //返回数据
-                    pages = data.pages;        //将总页数保存
-                    var ul = document.getElementById('sub-list');
-                    data.result.forEach(function(element) {
-                        ul.appendChild(createLiNode(element));
-                    }, this);
-                });
-                /**
-                 * 滚动列表动态加载
-                 * 
-                 * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
-                 */
-                var subListWrapper = document.getElementById('sub-list-wrapper');
-                var loadingFlag = 1;    // loadingFlag = 1 时允许加载
-                subListWrapper.onscroll = function(){
-                    if(this.clientHeight+ this.scrollTop + 150 >= this.scrollHeight && loadingFlag == 1){
-                        page++;
-                        loadingFlag = 0;    // loadingFlag = 0 时禁止加载
-                        if(page <= pages){
-                            ajaxGet(getJsonUrl(mid, page), function(result){
-                                var data = JSON.parse(result).data;    //返回数据
-                                var ul = document.getElementById('sub-list');
-                                data.result.forEach(function(element) {
-                                    ul.appendChild(createLiNode(element));
-                                }, this);
-                                loadingFlag = 1;
-                            });
-                        }
-                    }
-                };
-            }catch(e){
-                console.log(e);
-            }
+    var ul = bilibili_wrapper.getElementsByClassName('fr')[0];
+
+    if(ul !== undefined){
+        ul.insertBefore(createMenuSubBtn(), ul.childNodes[index+1]);
+        console.log(ul.childNodes[0]);
+        ajaxGet(getJsonUrl(mid, page), function(result){
+            var data = JSON.parse(result).data;    //返回数据
+            pages = data.pages;        //将总页数保存
+            var ul = document.getElementById('sub-list');
+            data.result.forEach(function(element) {
+                ul.appendChild(createLiNode(element));
+            }, this);
         });
-    });
-    observer.observe(bilibili_wrapper, {
-        'childList': true
-    });
+    }else{
+        var observer = new MutationObserver(function (mutations, observer) {
+            mutations.forEach(function(mutation) {
+                try{
+                    var ul = mutation.addedNodes[0];
+                    ul.insertBefore(createMenuSubBtn(), ul.childNodes[index]);
+                    // 从api加载第一页的内容
+                    ajaxGet(getJsonUrl(mid, page), function(result){
+                        var data = JSON.parse(result).data;    //返回数据
+                        pages = data.pages;        //将总页数保存
+                        var ul = document.getElementById('sub-list');
+                        data.result.forEach(function(element) {
+                            ul.appendChild(createLiNode(element));
+                        }, this);
+                    });
+                    /**
+                     * 滚动列表动态加载
+                     *
+                     * 这里设置一个加载标志位 loadingFlag：由于异步加载，在subListMenu还没有生成时，在页面底部会频繁触发ajax请求
+                     */
+                    var subListWrapper = document.getElementById('sub-list-wrapper');
+                    var loadingFlag = 1;    // loadingFlag = 1 时允许加载
+                    subListWrapper.onscroll = function(){
+                        if(this.clientHeight+ this.scrollTop + 150 >= this.scrollHeight && loadingFlag == 1){
+                            page++;
+                            loadingFlag = 0;    // loadingFlag = 0 时禁止加载
+                            if(page <= pages){
+                                ajaxGet(getJsonUrl(mid, page), function(result){
+                                    var data = JSON.parse(result).data;    //返回数据
+                                    var ul = document.getElementById('sub-list');
+                                    data.result.forEach(function(element) {
+                                        ul.appendChild(createLiNode(element));
+                                    }, this);
+                                    loadingFlag = 1;
+                                });
+                            }
+                        }
+                    };
+                }catch(e){
+                    console.log(e);
+                }
+            });
+        });
+        observer.observe(bilibili_wrapper, {
+            'childList': true
+        });
+    }
     /**
      * 获取番剧列表api地址
-     * 
-     * @param {any} mid 
-     * @param {any} page 
-     * @returns 
+     *
+     * @param {any} mid
+     * @param {any} page
+     * @returns
      */
     function getJsonUrl(mid, page) {
         page = page || 1;
@@ -161,7 +176,7 @@
                 spanText = data.total_count+'集全';
             }
             sp.appendChild(document.createTextNode(spanText));
-            
+
             a.appendChild(cover);
             a.appendChild(titleWrapper);
             a.appendChild(sp);
@@ -171,8 +186,8 @@
     }
     /**
      * 设置节点属性值
-     * @param {object} el 
-     * @param {array} attrs 
+     * @param {object} el
+     * @param {array} attrs
      */
     function setAttributes(el, attrs) {
         for(var key in attrs) {
@@ -181,8 +196,8 @@
     }
     /**
      * ajax 获取数据
-     * @param {string} url 
-     * @param {*} callback 
+     * @param {string} url
+     * @param {*} callback
      */
     function ajaxGet(url, callback){
         if(typeof GM === "undefined"){
@@ -209,7 +224,7 @@
     }
     /**
      * 获取cookie
-     * @param {string} cname 
+     * @param {string} cname
      */
     function getCookie(cname) {
         var name = cname + "=";
@@ -280,12 +295,12 @@
                 margin-left: 8px;
             }
             #sub-list-wrapper>ul>li a>.titleWrapper{
-                text-overflow: ellipsis; 
-                overflow-x: hidden; 
+                text-overflow: ellipsis;
+                overflow-x: hidden;
                 white-space: nowrap;
                 display: inline-block;
                 max-width: 120px;
-                padding-left: 10px; 
+                padding-left: 10px;
             }
             #sub-list-wrapper>ul>li span.spWrapper{
                 margin-left: auto;
