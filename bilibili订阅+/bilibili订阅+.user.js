@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.4.1
+// @version      0.4.2
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -17,35 +17,41 @@
     let subscribe_node = document.createElement('li');
     subscribe_node.setAttribute('id', 'subscribe');
     subscribe_node.setAttribute('class', 'nav-item');
+    subscribe_node.setAttribute('v-on:mouseover.once', 'onmouseover');
+    subscribe_node.setAttribute('v-on:mouseleave', 'onmouseleave');
     subscribe_node.innerHTML = `
-      <a :href="href" id="subscribe-link" class="t" 
-        v-on:mousemove="onHover">订阅</a>
-      <div id="subscribe-list" 
-        :class="{ 'fade-active': isActive }"
-        @mouseleave="noHover"
-        @scroll.stop="onscroll"
-        ref="list">
-        <ul>
-          <li v-for="season in seasons">
-          <a :href="season.share_url" target="_blank">
-            <img :src="season.cover" alt="" class="season-cover" />
-            <span class="season-name">
-              {{ season.title }}
-            </span>
-            <span class="season-tag">
-              {{ formate_tag(season) }}
-            </span>
-          </a>
-          </li>
-        </ul>
-      </div>
+      <a id="subscribe-link"
+        class="t"
+        :href="href"
+        @mouseover="onmouseover">订阅</a>
+      <transition name="slide-fade">
+        <div id="subscribe-list"
+          :class="{ 'isActive': show }"
+          v-if="show" 
+          @scroll.stop="onscroll"
+          ref="list">
+          <ul>
+            <li v-for="season in seasons">
+            <a :href="season.share_url" target="_blank">
+              <img :src="season.cover" alt="" class="season-cover" />
+              <span class="season-name">
+                {{ season.title }}
+              </span>
+              <span class="season-tag">
+                {{ formate_tag(season) }}
+              </span>
+            </a>
+            </li>
+          </ul>
+        </div>
+      </transition>
     `;
     nav_list.appendChild(subscribe_node);
 
     let subscribe = new Vue({
-      el: '#subscribe-list',
+      el: '#subscribe',
       data: {
-        isActive: false,
+        show: false,
         seasons: [],
         loadflag: true,
         pages: 1,             // count of pages
@@ -63,6 +69,9 @@
         },
         mid(){
           return this.get_cookie('DedeUserID');
+        },
+        href(){
+          return `//space.bilibili.com/${this.mid}/#!/bangumi`;
         }
       },
       methods: {
@@ -101,8 +110,11 @@
           }
           return tag;
         },
-        noHover(){
-          this.isActive = false;
+        onmouseover(){
+          this.show = true;
+        },
+        onmouseleave(){
+          this.show = false;
         },
         onscroll(){
           if(this.loadflag
@@ -112,21 +124,6 @@
             this.loadflag = false;  // refuse to load 
             this.get_subscribe();
           }
-        }
-      }
-    });
-
-    let subscribe_link = new Vue({
-      el: '#subscribe-link',
-      computed: {
-        href(){
-          return `//space.bilibili.com/${subscribe.mid}/#!/bangumi`;
-        }
-      },
-      methods: {
-        onHover(){
-          console.log('mouseover');
-          subscribe.isActive = true;
         }
       }
     });
@@ -191,11 +188,9 @@
         height: 340px;
         overflow-y: auto;
         position: absolute;
-        top: 46px;
+        top: 42px;
         left: -101px;
         border-radius:  0 0 4px 4px;
-        visibility: hidden;
-        opacity: 0;
         background: #fff;
         box-shadow: rgba(0,0,0,0.16) 0 2px 4px;
         text-align: left;
@@ -203,11 +198,7 @@
         z-index: 7000;
         transition: all .3s ease-out .25s;
       }
-      #subscribe-list.fade-active:hover,#subscribe>a:hover + #subscribe-list{
-        visibility: visible;
-        opacity: 1;
-        top: 42px;
-      }
+
       #subscribe-list>ul>li{
         height: 42px;
       }
