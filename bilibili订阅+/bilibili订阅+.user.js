@@ -5,9 +5,7 @@
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
-// @connect      space.bilibili.com
-// @grant        GM.xmlHttpRequest
-// @license MIT
+// @license      MIT
 // ==/UserScript==
 
 (function() {
@@ -35,7 +33,7 @@
               {{ season.title }}
             </span>
             <span class="season-tag">
-              {{ season.newest_ep_index }}
+              {{ formate_tag(season) }}
             </span>
           </a>
           </li>
@@ -88,6 +86,20 @@
             // error callback
             console.log('error');
           });
+        },
+        formate_tag(season){
+          let tag='';   //标签内容
+          if(season.is_finish === 0){
+              if(season.newest_ep_index === -1){
+                  tag = '未放送';
+              }else{
+                  //有的番剧的total_count会成为-1， 所以出现这种情况就不保留total_count了
+                  tag = (season.total_count === -1)? season.newest_ep_index: season.newest_ep_index+'/'+season.total_count;
+              }
+          }else{
+              tag = season.total_count+'集全';
+          }
+          return tag;
         },
         noHover(){
           this.isActive = false;
