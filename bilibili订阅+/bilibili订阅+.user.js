@@ -220,6 +220,10 @@
         justify-content: flex-start;
         align-items: center;
       }
+      #subscribe-list>ul>li>a:hover{
+        color: #00a1d6;
+        background: #e5e9ef;
+      }
       #subscribe-list .season-cover{
         width: 30px;
         height: 40px;
