@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.4.0
+// @version      0.4.1
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -19,9 +19,9 @@
     subscribe_node.setAttribute('class', 'nav-item');
     subscribe_node.innerHTML = `
       <a :href="href" id="subscribe-link" class="t" 
-        v-on:mousemove="onHover">测试</a>
+        v-on:mousemove="onHover">订阅</a>
       <div id="subscribe-list" 
-        :class="{ 'fade-active': isActive }" 
+        :class="{ 'fade-active': isActive }"
         @mouseleave="noHover"
         @scroll.stop="onscroll"
         ref="list">
