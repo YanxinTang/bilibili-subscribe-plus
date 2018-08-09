@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.4.2
+// @version      0.4.3
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -84,9 +84,7 @@
           return undefined;
         },
         get_subscribe(){
-          console.log(this.url);
           this.$http.get(this.url).then((response) => {
-            console.log(response.body);
             this.seasons = [...this.seasons, ...response.body.data.result];
             this.pages = response.body.data.pages;
             this.page++;
@@ -162,18 +160,18 @@
    */
   function lib_loader(callback) {
     let head = document.head || document.getElementsByTagName('head')[0];
-    let jquery_node = document.createElement('script');
-    jquery_node.setAttribute("src", "//cdn.bootcss.com/vue/2.5.16/vue.js");
+    let vue_node = document.createElement('script');
+    vue_node.setAttribute("src", "//cdn.bootcss.com/vue/2.5.16/vue.min.js");
 
-    jquery_node.addEventListener('load', function() {
+    vue_node.addEventListener('load', function() {
       console.log('Vue has bing loaded');
-      let vue_node = document.createElement('script');
-      vue_node.setAttribute("src", "//cdn.bootcss.com/vue-resource/1.5.1/vue-resource.min.js");
-      vue_node.addEventListener('load', callback, false);
-      head.appendChild(vue_node);
+      let vue_resource_node = document.createElement('script');
+      vue_resource_node.setAttribute("src", "//cdn.bootcss.com/vue-resource/1.5.1/vue-resource.min.js");
+      vue_resource_node.addEventListener('load', callback, false);
+      head.appendChild(vue_resource_node);
     }, false);
 
-    head.appendChild(jquery_node);
+    head.appendChild(vue_node);
   }
 
   /**
