@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.4.3
+// @version      0.4.4
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -119,7 +119,7 @@
             && this.page <= this.pages
             && this.$refs.list.scrollHeight - this.$refs.list.scrollTop - 50 <=  this.$refs.list.clientHeight
             ){
-            this.loadflag = false;  // refuse to load 
+            this.loadflag = false;  // refuse to load
             this.get_subscribe();
           }
         }
@@ -131,7 +131,7 @@
    * get the ul node of nav list item. It will be called agter jquery and vue loaded in init_lib
    * @return {[type]} null
    */
-  
+
   let get_nav_list = function(callback){
     console.log('vue-resource has bing loaded');
 
@@ -160,22 +160,14 @@
    */
   function lib_loader(callback) {
     let head = document.head || document.getElementsByTagName('head')[0];
-    let vue_node = document.createElement('script');
-    vue_node.setAttribute("src", "//cdn.bootcss.com/vue/2.5.16/vue.min.js");
-
-    vue_node.addEventListener('load', function() {
-      console.log('Vue has bing loaded');
-      let vue_resource_node = document.createElement('script');
-      vue_resource_node.setAttribute("src", "//cdn.bootcss.com/vue-resource/1.5.1/vue-resource.min.js");
-      vue_resource_node.addEventListener('load', callback, false);
-      head.appendChild(vue_resource_node);
-    }, false);
-
-    head.appendChild(vue_node);
+    let vue_script_node = document.createElement('script');
+    vue_script_node.setAttribute("src", "//cdn.jsdelivr.net/combine/npm/vue@2.5.17,npm/vue-resource@1.5.1");
+    vue_script_node.addEventListener('load', callback, false);
+    head.appendChild(vue_script_node);
   }
 
   /**
-   * @return {undifined}  
+   * @return {undifined}
    */
   function style(){
     let head = document.head || document.getElementsByTagName('head')[0];
@@ -246,9 +238,9 @@
 
   /**
    * @param  {[string]} name  name of cookie
-   * @return {[string]} string of specified cookie 
+   * @return {[string]} string of specified cookie
    */
-  
-  lib_loader(get_nav_list); 
+
+  lib_loader(get_nav_list);
   style();
 })();
