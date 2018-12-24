@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.4.4
+// @version      0.4.5
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -139,19 +139,37 @@
     if(nav_list){
       main(nav_list);
     }else{
-      let bilibili_wrapper = document.querySelector('div.nav-con.fr');
       let observer = new MutationObserver(function (mutations, observer) {
         mutations.forEach(function(mutation) {
-          if(mutation.addedNodes.length>0 && mutation.addedNodes[0].classList.contains('fr')){
-            main(mutation.addedNodes[0]);
-            observer.disconnect();
+          if(mutation.addedNodes.length>0){
+            const addedNode = mutation.addedNodes[0];
+            const navList = isNavList(addedNode);
+            if(navList){
+              main(navList);
+              ovserver.disconnect();
+            }          
           }
         });
       });
-      observer.observe(bilibili_wrapper, {
+      observer.observe(document.body, {
         'childList': true,
+        'subtree': true
       });
     }
+  }
+
+  /**
+   * check if specified node is the nav list
+   * @param {*} node 
+   */
+  function isNavList(node) {
+    const navListTemp = node.querySelector('ul.fr');
+    if(navListTemp){
+      return navListTemp;
+    } else if (node.tagName === 'UL' && node.classList.contains('fr')){
+      return node;
+    }
+    return false;
   }
 
   /**
