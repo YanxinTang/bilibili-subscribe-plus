@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.4.6
+// @version      0.4.7
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -88,10 +88,10 @@
             this.seasons = [...this.seasons, ...response.body.data.result];
             this.pages = response.body.data.pages;
             this.page++;
-            // get body data
+            log('Load successfully ^.^')
           }, (response) => {
             // error callback
-            console.log('error');
+            log('Something was wrong when getting resource.=.=\\\\\\');
           });
         },
         formate_tag(season){
@@ -128,16 +128,22 @@
   }
 
   /**
+   * print something in console with custom style
+   * @param {*} stuff 
+   */
+  function log(stuff) {
+    console.log('%cbilibili订阅+:', 'background: #f25d8e; border-radius: 3px; color: #fff; padding: 0 8px', stuff);
+  }
+
+  /**
    * get the ul node of nav list item. It will be called agter jquery and vue loaded in init_lib
    * @return {[type]} null
    */
-
   let get_nav_list = function(callback){
-    console.log('vue-resource has bing loaded');
-
     let nav_list = document.querySelector('div.nav-con.fr>ul.fr');
     if(nav_list){
       main(nav_list);
+      log('Get nav menu list');
     }else{
       let observer = new MutationObserver(function (mutations, observer) {
         mutations.forEach(function(mutation) {
@@ -145,6 +151,7 @@
             const addedNode = mutation.addedNodes[0];
             const navList = isNavList(addedNode);
             if(navList){
+              log('Get nav menu list');
               main(navList);
               ovserver.disconnect();
             }          
@@ -182,6 +189,7 @@
     vue_script_node.setAttribute("src", "//cdn.jsdelivr.net/combine/npm/vue@2.5.17,npm/vue-resource@1.5.1");
     vue_script_node.addEventListener('load', callback, false);
     head.appendChild(vue_script_node);
+    log('Vue has been loaded');
   }
 
   /**
