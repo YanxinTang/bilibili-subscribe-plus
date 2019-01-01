@@ -14,3 +14,7 @@
 [greasyfork](https://greasyfork.org/zh-CN/scripts/30283-bilibili%E8%AE%A2%E9%98%85)
 
 [github](https://github.com/YanxinTang/Tampermonkey)
+
+## 联系
+
+小伙伴们也可以加群（QQ）：`587106122`，进行反馈以及帮忙修复一些bug呦~
