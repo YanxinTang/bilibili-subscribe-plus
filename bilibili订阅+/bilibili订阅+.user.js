@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.4.7
+// @version      0.4.8
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -54,7 +54,7 @@
         show: false,
         seasons: [],
         loadflag: true,
-        pages: 1,             // count of pages
+        pages: -1,             // count of pages
         page: 1,              // current page
       },
       mounted(){
@@ -84,12 +84,17 @@
           return undefined;
         },
         get_subscribe(){
-          this.$http.get(this.url).then((response) => {
-            this.seasons = [...this.seasons, ...response.body.data.result];
-            this.pages = response.body.data.pages;
+          this.$http.get(this.url)
+          .then((response) => {
+            const newSeasons = response.body.data.result;
+            this.seasons = [...this.seasons, ...newSeasons];
+            if (this.pages <= 0) {
+              const count = response.body.data.count;
+              this.pages = Math.ceil(count / newSeasons.length);
+            }
             this.page++;
             log('Load successfully ^.^')
-          }, (response) => {
+          }, () => {
             // error callback
             log('Something was wrong when getting resource.=.=\\\\\\');
           });
@@ -98,13 +103,13 @@
           let tag='';   //标签内容
           if(season.is_finish === 0){
               if(season.newest_ep_index === -1){
-                  tag = '未放送';
+                tag = '未放送';
               }else{
-                  //有的番剧的total_count会成为-1， 所以出现这种情况就不保留total_count了
-                  tag = (season.total_count === -1)? season.newest_ep_index: season.newest_ep_index+'/'+season.total_count;
+                //有的番剧的total_count会成为-1， 所以出现这种情况就不保留total_count了
+                tag = (season.total_count === -1)? season.newest_ep_index: season.newest_ep_index+'/'+season.total_count;
               }
           }else{
-              tag = season.total_count+'集全';
+            tag = season.total_count+'集全';
           }
           return tag;
         },
