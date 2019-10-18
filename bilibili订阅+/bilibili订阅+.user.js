@@ -24,7 +24,13 @@
     return;
   }
 
-  getNavList(main);
+  const PATH = location.pathname;
+  const useOldVersion = isVideoPlayerPage(PATH) && !isNewVideoPlayerPage(PATH);
+  if (useOldVersion) {
+    getOldNavList(main);
+  } else {
+    getNavList(main);
+  }
   style();
 
   /**
@@ -187,10 +193,30 @@
           const navList = document.body.querySelector('div.nav-wrapper-right .nav-con .nav-con-ul');
           if (navList) {
             main(navList);
-            clearInterval(timer)
+            clearInterval(timer);
           }
         }, 300);
       }
+    }
+  }
+
+  /**
+   * get nav list for old version page
+   * @param {*} main 
+   */
+  function getOldNavList(main) {
+    const navList = document.querySelector('div.nav-con.fr>ul.fr');
+    if(navList){
+      main(navList);
+      log('Get nav menu list');
+    }else{
+      const timer = setInterval(() => {
+        const navList = document.body.querySelector('div.nav-con.fr>ul.fr');
+        if (navList) {
+          main(navList);
+          clearInterval(timer);
+        }
+      }, 300);
     }
   }
 
@@ -218,8 +244,7 @@
     let style = document.createElement('style');
     const listNewVersionOffset = '-200px';
     const listOldVersionOffset = '-101px';
-    const path = location.pathname;
-    const newVersion = getCookie('stardustpgcv') === '0606' && isPlayerPage(path);
+    const newVersion = isNewPlayerPage(PATH);
 
     style.textContent = `
       #subscribe-list{
@@ -298,14 +323,29 @@
     return '';
   }
 
+  
+  function isVideoPlayerPage(path) {
+    return /.*video\/av.*/.test(path);
+  }
+
+  function isBangumiPlayerPage(path) {
+    return /.*\/play\/.+/.test(path);
+  }
+
+  function isNewVideoPlayerPage(path) {
+    return isVideoPlayerPage(path) && getCookie('stardustvideo') === '1';
+  }
+
+  function isNewBangumiPlayerPage(path) {
+    return isBangumiPlayerPage(path) && getCookie('stardustpgcv') === '0606';
+  }
+
   /**
    * Test url path is media player page
-   * @param {string} path 
    * @returns {boolean}
    */
-  function isPlayerPage(path) {
-    const reg = /.*\/play\/.+/;
-    return reg.test(path)
+  function isNewPlayerPage(path) {
+    return isNewVideoPlayerPage(path) || isNewBangumiPlayerPage(path);
   }
 
   /**
