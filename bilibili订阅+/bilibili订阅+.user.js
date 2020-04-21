@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.5.2
+// @version      0.6.0
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -24,51 +24,138 @@
     return;
   }
 
-  const PATH = location.pathname;
-  const useOldVersion = isVideoPlayerPage(PATH) && !isNewVideoPlayerPage(PATH);
-  if (useOldVersion) {
-    getOldNavList(main);
-  } else {
-    getNavList(main);
-  }
   style();
+  getNavList().then(navList => main(navList));
 
-  /**
-   * main
-   * @param {*} navList 
-   */
   function main(navList) {
-    const subscribeMenuEl = document.createElement('li');
+    const subscribeMenuEl = document.createElement('div');
     subscribeMenuEl.setAttribute('id', 'subscribe');
     navList.appendChild(subscribeMenuEl);
+
+    const ListItem = {
+      name: 'ListItem',
+      props: {
+        link: {
+          type: String,
+          required: true,
+        },
+        cover: {
+          type: String,
+          required: true
+        },
+        title: {
+          type: String,
+          required: true,
+        },
+        tag: {
+          type: String,
+          required: true,
+        }
+      },
+      template: `
+      <li>
+        <a :href="link" target="_blank">
+          <img :src="cover" alt="" class="season-cover" />
+          <span class="season-name">
+            {{ title }}
+          </span>
+          <span class="season-tag">
+            {{ tag }}
+          </span>
+        </a>
+      </li>
+      `,
+    }
+
+    const List = {
+      name: 'List',
+      components: { ListItem },
+      props: {
+        list: {
+          type: Array,
+          default: () => [],
+        }
+      },
+      template: `
+      <ul ref="list">
+        <ListItem
+          v-for="item in list"
+          :key="item.id"
+          :link="item.link"
+          :cover="item.cover"
+          :title="item.title"
+          :tag="item.tag"
+        />
+      </ul>
+      `,
+    }
+
     const subscribe = new Vue({
       el: subscribeMenuEl,
+      components: { List },
       data: {
         show: false,
-        seasons: [],
+        bangumis: [],
+        cinemas: [],
+        floowings: [],
         loadflag: true,
-        pages: -1,             // count of pages
-        page: 1,              // current page
+        pages: {
+          bangumi: -1,
+          cinema: -1,
+          floowing: -1
+        },             // count of pages
+        page: {
+          bangumi: 1,
+          cinema: 1,
+          floowing: 1
+        },              // current page
+        perPage: 15,
         mid: '',
+        activeTab: 'bangumi',
       },
       created() {
         this.mid = DedeUserID;
-        this.getSubscribe();
+        this.getSubscribe(this.activeTab);
       },
       updated(){
         this.loadflag = true; // allow loading after update data
       },
       computed: {
-        url(){
-          return `//space.bilibili.com/ajax/Bangumi/getList?mid=${this.mid}&page=${this.page}`;
+        list() {
+          const key = this.activeTab;
+          if (key === 'bangumi') { return this.bangumis };
+          if (key === 'cinema') { return this.cinemas };
+          if (key === 'floowing') { return this.floowings }
         },
         href(){
-          return `//space.bilibili.com/${this.mid}/bangumi`;
+          const urls = {
+            bangumi: `//space.bilibili.com/${this.mid}/bangumi`,
+          }
+          return urls[this.activeTab];
         }
       },
       methods: {
-        getSubscribe(){
-          return fetch(this.url)
+        dataKey(key) {
+          if (key === 'bangumi') { return 'bangumis' };
+          if (key === 'cinema') { return 'cinemas' };
+          if (key === 'floowing') { return 'floowings' };
+        },
+        switchTab(key) {
+          this.activeTab = key;
+          const dataKey = this.dataKey(key);
+          if (this[dataKey].length <= 0) {
+            this.getSubscribe(key);
+          }
+        },
+        getListData(key) {
+          const page = this.page[key];
+          const dataKey = this.dataKey(key);
+          const urls = {
+            bangumi: `//api.bilibili.com/x/space/bangumi/follow/list?type=1&follow_status=0&pn=${page}&ps=${this.perPage}&vmid=${this.mid}`,
+            cinema: `//api.bilibili.com/x/space/bangumi/follow/list?type=2&follow_status=0&pn=${page}&ps=${this.perPage}&vmid=${this.mid}`,
+          }
+          const url = urls[key];
+          return fetch(url)
             .then((response) => {
               if (response.ok) {
                 return response.json()
@@ -77,32 +164,70 @@
               }
             })
             .then((data) => {
-              const newSeasons = data.data.result;
-              this.seasons = [...this.seasons, ...newSeasons];
-              if (this.pages <= 0) {
-                const count = data.data.count;
-                this.pages = Math.ceil(count / newSeasons.length);
+              const newData = data.data.list.map(item => ({
+                id: item.season_id || item.media_id || item.mid,
+                link: item.url,
+                cover: item.cover,
+                title: item.title,
+                tag: item.new_ep.index_show,
+              }));
+              this[dataKey] = [...this[dataKey], ...newData]
+              if (this.pages[key] <= 0) {
+                const total = data.data.total;
+                this.pages[key] = Math.ceil(total / this.perPage);
               }
-              this.page++;
+              this.page[key]++;
               log('Load successfully ^.^')
             })
             .catch(error => {
               log(error)
             })
         },
-        formateTag(season){
-          let tag='';   //标签内容
-          if(season.is_finish === 0){
-              if(season.newest_ep_index === -1){
-                tag = '未放送';
-              }else{
-                //有的番剧的total_count会成为-1， 所以出现这种情况就不保留total_count了
-                tag = (season.total_count === -1)? season.newest_ep_index: season.newest_ep_index+'/'+season.total_count;
+        getFloowings() {
+          const key = 'floowing';
+          const dataKey = this.dataKey(key);
+          const page = this.page[key];
+          const url = `//api.bilibili.com/x/relation/followings?vmid=${this.mid}&pn=${page}&ps=${this.perPage}&order=desc`;
+          return fetch(url)
+            .then((response) => {
+              if (response.ok) {
+                return response.json()
+              } else {
+                return Promise.reject(new Error(`${response.url}: ${response.status}`))
               }
-          }else{
-            tag = season.total_count+'集全';
+            })
+            .then((data) => {
+              const newData = data.data.list.map(item => ({
+                link: `//space.bilibili.com/${item.mid}/`,
+                cover: item.face,
+                title: item.uname,
+                tag: '已关注',
+              }));
+              this[dataKey] = [...this[dataKey], ...newData]
+              if (this.pages[key] <= 0) {
+                const total = data.data.total;
+                this.pages[key] = Math.ceil(total / this.perPage);
+              }
+              this.page[key]++;
+              log('Load successfully ^.^')
+            })
+            .catch(error => {
+              log(error)
+            })
+        },
+        getSubscribe(key) {
+          switch (key) {
+            case 'bangumi':
+              this.getListData('bangumi');
+              break;
+            case 'cinema':
+              this.getListData('cinema');
+              break;
+            case 'floowing':
+              this.getFloowings();
+            default: 
+              break;
           }
-          return tag;
         },
         onmouseover(){
           this.show = true;
@@ -110,128 +235,97 @@
         onmouseleave(){
           this.show = false;
         },
-        onscroll(){
+        onscroll() {          
+          const key = this.activeTab;
+          const list = this.$refs.list.$refs.list;
           if(this.loadflag
-            && this.page <= this.pages
-            && this.$refs.list.scrollHeight - this.$refs.list.scrollTop - 50 <=  this.$refs.list.clientHeight
+            && this.page[key] <= this.pages[key]
+            && list.scrollHeight - list.scrollTop - 50 <=  list.clientHeight
             ){
             this.loadflag = false;  // refuse to load
-            this.getSubscribe();
+            this.getSubscribe(this.activeTab);
           }
         }
       },
       template: `
-        <li 
-          id="subscribe"
-          class="nav-item"
+        <div class="item"
           @mouseover.once="onmouseover"
           @mouseleave="onmouseleave"
         >
-          <a id="subscribe-link"
-            class="t"
-            :href="href"
-            @mouseover="onmouseover">
-            订阅
-          </a>
+          <a href="" target="_blank"><span class="name" @mouseover="onmouseover">订阅</span></a>
           <transition name="slide-fade">
-            <div id="subscribe-list"
+            <div id="subscribe-list-wrapper"
               :class="{ 'isActive': show }"
-              v-if="show" 
-              @scroll.stop="onscroll"
-              ref="list">
-              <ul>
-                <li v-for="season in seasons">
-                <a :href="season.share_url" target="_blank">
-                  <img :src="season.cover" alt="" class="season-cover" />
-                  <span class="season-name">
-                    {{ season.title }}
-                  </span>
-                  <span class="season-tag">
-                    {{ formateTag(season) }}
-                  </span>
-                </a>
-                </li>
-              </ul>
+              v-if="show">
+              <div class="subscribe-list">
+                <div class="tab-bar">
+                  <div class="tab-item" :class="{ active: activeTab === 'bangumi' }" @click="switchTab('bangumi')">追番</div>
+                  <div class="tab-item" :class="{ active: activeTab === 'cinema' }" @click="switchTab('cinema')">追剧</div>
+                  <div class="tab-item" :class="{ active: activeTab === 'floowing' }" @click="switchTab('floowing')">关注</div>
+                </div>
+                <List :list="list" @scroll.native.stop="onscroll" ref="list"/>
+              </div>
             </div>
           </transition>
-        </li>
+        </div>
       `,
-    });
+    })
   }
 
   /**
    * get nav list on the right of header
    * @param {Function} main 
    */
-  function getNavList (main) {
-    const navList = document.body.querySelector('div.nav-wrapper-right .nav-con .nav-con-ul');
-    if(isNavList(navList)){
-      log('Get nav menu list directly');
-      main(navList);
-    } else {
-      const navListWrapper = document.querySelector('div.nav-wrapper-right .nav-con');
-      if (navListWrapper) {
-        const observer = new MutationObserver((mutations, ovserver) => {
+  function getNavList () {
+    const userCenter = document.body.querySelector('.nav-user-center');
+    return new Promise((resolve) => {
+      if (userCenter) {
+        const observer = new MutationObserver((mutations, observer) => {
           for (const mutation of mutations) {
-            if(mutation.addedNodes.length>0){
+            if (mutation.addedNodes.length > 0) {
               const addedNode = mutation.addedNodes[0];
               if(isNavList(addedNode)){
                 log('Get nav menu list by observing');
-                main(addedNode);
-                ovserver.disconnect();
+                resolve(addedNode);
+                observer.disconnect();
                 break;
-              }  
+              }
             }
           }
         });
-        observer.observe(navListWrapper, {
+        observer.observe(userCenter, {
           childList: true,
           subtree: false,
         });
       } else {
+        // Find user nav menu per 100ms
         const timer = setInterval(() => {
-          const navList = document.body.querySelector('div.nav-wrapper-right .nav-con .nav-con-ul');
-          if (navList) {
-            main(navList);
+          const userNavMenu = document.body.querySelector('.nav-user-center>.user-con.signin');
+          if (userNavMenu) {
+            log('Get nav menu list by timer');
+            resolve(userNavMenu);
             clearInterval(timer);
           }
-        }, 300);
+        }, 100);
       }
-    }
-  }
-
-  /**
-   * get nav list for old version page
-   * @param {*} main 
-   */
-  function getOldNavList(main) {
-    const navList = document.querySelector('div.nav-con.fr>ul.fr');
-    if(navList){
-      main(navList);
-      log('Get nav menu list');
-    }else{
-      const timer = setInterval(() => {
-        const navList = document.body.querySelector('div.nav-con.fr>ul.fr');
-        if (navList) {
-          main(navList);
-          clearInterval(timer);
-        }
-      }, 300);
-    }
+    });
+    
   }
 
   /**
    * check if specified node is the nav list
    * @param {*} node 
+   * @returns {boolean}          - 
    */
   function isNavList(node) {
     if (
       node
       && node.tagName
-      && node.tagName.toLowerCase() === 'ul'
-      && node.classList.contains('nav-con-ul')  
+      && node.tagName.toLowerCase() === 'div'
+      && node.classList.contains('user-con') 
+      && node.classList.contains('signin')
     ) {
-      return true;
+      return true
     }
     return false;
   }
@@ -242,31 +336,66 @@
   function style() {
     let head = document.head || document.getElementsByTagName('head')[0];
     let style = document.createElement('style');
-    const listNewVersionOffset = '-200px';
-    const listOldVersionOffset = '-101px';
-    const newVersion = isNewPlayerPage(PATH);
 
-    style.textContent = `
-      #subscribe-list{
+    style.textContent += `
+      #subscribe-list-wrapper {
         width: 250px;
-        height: 340px;
-        overflow-y: auto;
         position: absolute;
         top: 100%;
-        left: ${newVersion ? listNewVersionOffset : listOldVersionOffset};
-        border-radius:  0 0 4px 4px;
-        background: #fff;
-        box-shadow: rgba(0,0,0,0.16) 0 2px 4px;
+        left: -110px;
+        padding-top: 12px;
         text-align: left;
         font-size: 12px;
-        z-index: ${newVersion ? 'unset' : 1};
+        z-index: 10;
         transition: all .3s ease-out .25s;
       }
 
-      #subscribe-list>ul>li{
+      #subscribe-list-wrapper .tab-bar {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        font-size: 12px;
+        color: #999;
+        line-height: 16px;
+        height: 48px;
+        padding-left: 20px;
+        user-select: none;
+        border-bottom: 1px solid #e7e7e7;
+        cursor: default;
+      }
+
+      #subscribe-list-wrapper .tab-bar .tab-item {
+        display: flex;
+        border-radius: 12px;
+        cursor: pointer;
+        margin: 0 24px 0 0;
+        transition: 0.3s ease;
+        z-index: 1;
+      }
+
+      #subscribe-list-wrapper .tab-bar .tab-item.active {
+        background-color: #00a1d6;
+        color: #fff;
+        padding: 4px 10px;
+        margin: 0 14px 0 -10px;
+      }
+
+      #subscribe-list-wrapper .subscribe-list {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        box-shadow: rgba(0,0,0,0.16) 0 2px 4px;
+        border-radius:  2px;
+      }
+
+      .subscribe-list ul {
+        max-height: 340px;
+        overflow-y: auto;
+      }
+      .subscribe-list ul>li{
         height: 42px;
       }
-      #subscribe-list>ul>li>a{
+      .subscribe-list ul>li>a{
         color: #222;
         height: 42px;
         width: 100%;
@@ -275,18 +404,18 @@
         justify-content: flex-start;
         align-items: center;
       }
-      #subscribe-list>ul>li>a:hover{
+      .subscribe-list>ul>li>a:hover{
         color: #00a1d6;
         background: #e5e9ef;
       }
-      #subscribe-list .season-cover{
+      .subscribe-list .season-cover{
         width: 30px;
-        height: 40px;
+        height: auto;
         border-radius: 3px;
         margin-left: 8px;
         vertical-align: text-bottom;
       }
-      #subscribe-list .season-name{
+      .subscribe-list .season-name{
         text-overflow: ellipsis;
         overflow-x: hidden;
         white-space: nowrap;
@@ -294,7 +423,7 @@
         max-width: 120px;
         padding-left: 10px;
       }
-      #subscribe-list .season-tag{
+      .subscribe-list .season-tag{
         margin-left: auto;
         margin-right: 10px;
         background: #ff8eb3;
@@ -321,31 +450,6 @@
       return parts.pop().split(";").shift();
     }
     return '';
-  }
-
-  
-  function isVideoPlayerPage(path) {
-    return /.*video\/av.*/.test(path);
-  }
-
-  function isBangumiPlayerPage(path) {
-    return /.*\/play\/.+/.test(path);
-  }
-
-  function isNewVideoPlayerPage(path) {
-    return isVideoPlayerPage(path) && getCookie('stardustvideo') === '1';
-  }
-
-  function isNewBangumiPlayerPage(path) {
-    return isBangumiPlayerPage(path) && getCookie('stardustpgcv') === '0606';
-  }
-
-  /**
-   * Test url path is media player page
-   * @returns {boolean}
-   */
-  function isNewPlayerPage(path) {
-    return isNewVideoPlayerPage(path) || isNewBangumiPlayerPage(path);
   }
 
   /**
