@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.6.3
+// @version      0.6.4
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -123,7 +123,7 @@
       },
       computed: {
         subscribePageLink() {
-          reutrn `//space.bilibili.com/${this.mid}/bangumi`
+          return `//space.bilibili.com/${this.mid}/bangumi`;
         },
         list() {
           const key = this.activeTab;
@@ -266,7 +266,7 @@
           @mouseover.once="onmouseover"
           @mouseleave="onmouseleave"
         >
-          <a href="" target="_blank"><span class="name" @mouseover="onmouseover">订阅</span></a>
+          <a :href="subscribePageLink" target="_blank"><span class="name" @mouseover="onmouseover">订阅</span></a>
           <transition name="slide-fade">
             <div id="subscribe-list-wrapper"
               :class="{ 'isActive': show }"
