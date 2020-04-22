@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.6.0
+// @version      0.6.1
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -55,7 +55,7 @@
       template: `
       <li>
         <a :href="link" target="_blank">
-          <img :src="cover" alt="" class="season-cover" />
+          <img :src="cover" :alt="title" class="season-cover" />
           <span class="season-name">
             {{ title }}
           </span>
