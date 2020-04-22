@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.6.1
+// @version      0.6.2
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -112,6 +112,7 @@
         perPage: 15,
         mid: '',
         activeTab: 'bangumi',
+        $_mouseOverTimer: null,
       },
       created() {
         this.mid = DedeUserID;
@@ -121,6 +122,9 @@
         this.loadflag = true; // allow loading after update data
       },
       computed: {
+        subscribePageLink() {
+          reutrn `//space.bilibili.com/${this.mid}/bangumi`
+        },
         list() {
           const key = this.activeTab;
           if (key === 'bangumi') { return this.bangumis };
@@ -230,10 +234,14 @@
           }
         },
         onmouseover(){
-          this.show = true;
+          this.$data.$_mouseOverTimer = setTimeout(() => {
+            this.show = true;
+            clearInterval(this.$data.$_mouseOverTimer);
+          }, 100);
         },
         onmouseleave(){
           this.show = false;
+          clearInterval(this.$data.$_mouseOverTimer);
         },
         onscroll() {          
           const key = this.activeTab;
