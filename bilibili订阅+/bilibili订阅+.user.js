@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.6.2
+// @version      0.6.3
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -159,7 +159,10 @@
             cinema: `//api.bilibili.com/x/space/bangumi/follow/list?type=2&follow_status=0&pn=${page}&ps=${this.perPage}&vmid=${this.mid}`,
           }
           const url = urls[key];
-          return fetch(url)
+          return fetch(url, {
+            method: 'GET',
+            credentials: 'include',
+          })
             .then((response) => {
               if (response.ok) {
                 return response.json()
@@ -192,7 +195,10 @@
           const dataKey = this.dataKey(key);
           const page = this.page[key];
           const url = `//api.bilibili.com/x/relation/followings?vmid=${this.mid}&pn=${page}&ps=${this.perPage}&order=desc`;
-          return fetch(url)
+          return fetch(url, {
+            method: 'GET',
+            credentials: 'include',
+          })
             .then((response) => {
               if (response.ok) {
                 return response.json()
