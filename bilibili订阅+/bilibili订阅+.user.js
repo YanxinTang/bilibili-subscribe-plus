@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.6.4
+// @version      0.6.5
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @include      *.bilibili.com/*
@@ -294,23 +294,31 @@
     const userCenter = document.body.querySelector('.nav-user-center');
     return new Promise((resolve) => {
       if (userCenter) {
-        const observer = new MutationObserver((mutations, observer) => {
-          for (const mutation of mutations) {
-            if (mutation.addedNodes.length > 0) {
-              const addedNode = mutation.addedNodes[0];
-              if(isNavList(addedNode)){
-                log('Get nav menu list by observing');
-                resolve(addedNode);
-                observer.disconnect();
-                break;
+        const userNavMenu = userCenter.querySelector('.user-con.signin');
+        if(userNavMenu) {
+          // It can get userNavMenu direcyly without waiting at sometime
+          // See detail at https://greasyfork.org/zh-CN/forum/discussion/76143/x
+          log("Get nav menu list directly");
+          resolve(userNavMenu);
+        } else {
+          const observer = new MutationObserver((mutations, observer) => {
+            for (const mutation of mutations) {
+              if (mutation.addedNodes.length > 0) {
+                const addedNode = mutation.addedNodes[0];
+                if(isNavList(addedNode)){
+                  log('Get nav menu list by observing');
+                  resolve(addedNode);
+                  observer.disconnect();
+                  break;
+                }
               }
             }
-          }
-        });
-        observer.observe(userCenter, {
-          childList: true,
-          subtree: false,
-        });
+          });
+          observer.observe(userCenter, {
+            childList: true,
+            subtree: false,
+          });
+        }
       } else {
         // Find user nav menu per 100ms
         const timer = setInterval(() => {
