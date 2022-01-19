@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.7.3
+// @version      0.7.4
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @license      MIT
@@ -25,7 +25,6 @@
   if (isNewVersion() && !isInNewVersionBlacklist()) {
     const PER_PAGE = 15;
     try {
-      newStyle();
       const lastPopoverButton = await getLastPopoverButton();
       const subscribeMenuEl = document.createElement('li');
       subscribeMenuEl.setAttribute('id', 'subscribe');
@@ -307,8 +306,8 @@
       log(error)
     }
   } else {
-    getNavList().then(navList => main(navList));
     style();
+    getNavList().then(navList => main(navList));
   }
 
   function getLastPopoverButton(count = 1) {
@@ -325,16 +324,6 @@
         resolve(getLastPopoverButton(count++));
       }, 100);
     });
-  }
-
-  function newStyle() {
-    let head = document.head || document.getElementsByTagName('head')[0];
-    let style = document.createElement('style');
-
-    style.textContent += `
-      
-    `;
-    head.appendChild(style);
   }
 
   function main(navList) {
