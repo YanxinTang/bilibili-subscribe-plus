@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.7.1
+// @version      0.7.2
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @license      MIT
@@ -150,6 +150,7 @@
           return {
             isPanelVisible: false,
             loading: false,
+            inLeaveAnimation: false,
             activeTab: 'bangumis',
             tabs: [
               { key: 'bangumis', name: '追番' },
@@ -227,10 +228,18 @@
             }
           },
           onMouseoverHandler(){
-            this.isPanelVisible = true;
+            if (!this.inLeaveAnimation) {
+              this.isPanelVisible = true;
+            }
           },
           onMouseleaveHandler(){
             this.isPanelVisible = false;
+          },
+          onContentBeforeLeaveHandler() {
+            this.inLeaveAnimation = true;
+          },
+          onContentAfterLeaveHandler() {
+            this.inLeaveAnimation = false;
           },
           onScrollHandler() {
             const panelContent = this.$refs.panelContent;
@@ -260,6 +269,8 @@
             name="v-popover_bottom"
             enter-active-class="v-popover_bottom-enter-from"
             leave-active-class="v-popover_bottom-leave-from"
+            @before-leave="onContentBeforeLeaveHandler"
+            @after-leave="onContentAfterLeaveHandler"
           >
             <div
               v-show="isPanelVisible"
