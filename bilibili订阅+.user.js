@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.7.2
+// @version      0.7.3
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @license      MIT
@@ -22,7 +22,7 @@
     return;
   }
 
-  if (isNewVersion()) {
+  if (isNewVersion() && !isInNewVersionBlacklist()) {
     const PER_PAGE = 15;
     try {
       newStyle();
@@ -787,6 +787,15 @@
   function isNewVersion() {
     const iWannaGoBack = getCookie('i-wanna-go-back');
     return iWannaGoBack === '-1';
+  }
+
+  function isInNewVersionBlacklist() {
+    const blacklists = [
+      /https:\/\/space.bilibili.com\/.*/,
+      /https:\/\/www.bilibili.com\/bangumi\/play\/.*/,
+      /https:\/\/www.bilibili.com\/anime\/.*/
+    ];
+    return blacklists.some(patten => patten.test(location.href));
   }
 
   /**
