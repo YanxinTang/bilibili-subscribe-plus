@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.7.4
+// @version      0.7.5
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @license      MIT
@@ -782,7 +782,8 @@
     const blacklists = [
       /https:\/\/space.bilibili.com\/.*/,
       /https:\/\/www.bilibili.com\/bangumi\/play\/.*/,
-      /https:\/\/www.bilibili.com\/anime\/.*/
+      /https:\/\/www.bilibili.com\/anime\/.*/,
+      /https:\/\/search.bilibili.com\/.*/,
     ];
     return blacklists.some(patten => patten.test(location.href));
   }
