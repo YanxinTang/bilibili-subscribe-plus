@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.7.5
+// @version      0.7.6
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @license      MIT
@@ -14,11 +14,11 @@
 // @exclude     *://show.bilibili.com/*
 // ==/UserScript==
 
-(async function() {
+(async function () {
   const DedeUserID = getCookie('DedeUserID');
   const loginStatus = DedeUserID !== '';
   if (!loginStatus) {
-    log("少侠请先登录~  哔哩哔哩 (゜-゜)つロ 干杯~")
+    log('少侠请先登录~  哔哩哔哩 (゜-゜)つロ 干杯~');
     return;
   }
 
@@ -28,50 +28,71 @@
       const lastPopoverButton = await getLastPopoverButton();
       const subscribeMenuEl = document.createElement('li');
       subscribeMenuEl.setAttribute('id', 'subscribe');
-      lastPopoverButton.after(subscribeMenuEl);;
+      lastPopoverButton.after(subscribeMenuEl);
 
       const getBangumis = (page) => {
-        return fetch(`//api.bilibili.com/x/space/bangumi/follow/list?type=1&follow_status=0&pn=${page}&ps=${PER_PAGE}&vmid=${DedeUserID}`)
-          .then(response => response.json())
-          .then(response => response.data)
-          .then(({ list, ...rest}) => {
+        return fetch(
+          `//api.bilibili.com/x/space/bangumi/follow/list?type=1&follow_status=0&pn=${page}&ps=${PER_PAGE}&vmid=${DedeUserID}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        )
+          .then((response) => response.json())
+          .then((response) => response.data)
+          .then(({ list, ...rest }) => {
             return {
-              list: list.map(item => ({ ...item, id: item.media_id })),
-              ...rest
-            }
+              list: list.map((item) => ({ ...item, id: item.media_id })),
+              ...rest,
+            };
           });
-      }
+      };
 
       const getCinemas = (page) => {
-        return fetch(`//api.bilibili.com/x/space/bangumi/follow/list?type=2&follow_status=0&pn=${page}&ps=${PER_PAGE}&vmid=${DedeUserID}`)
-          .then(response => response.json())
-          .then(response => response.data)
-          .then(({ list, ...rest}) => {
+        return fetch(
+          `//api.bilibili.com/x/space/bangumi/follow/list?type=2&follow_status=0&pn=${page}&ps=${PER_PAGE}&vmid=${DedeUserID}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        )
+          .then((response) => response.json())
+          .then((response) => response.data)
+          .then(({ list, ...rest }) => {
             return {
-              list: list.map(item => ({ ...item, id: item.media_id })),
-              ...rest
-            }
+              list: list.map((item) => ({ ...item, id: item.media_id })),
+              ...rest,
+            };
           });
-      }
+      };
 
       const getFloowings = (page) => {
-        return fetch(`//api.bilibili.com/x/relation/followings?&pn=${page}&ps=${PER_PAGE}&vmid=${DedeUserID}&order=desc`)
-          .then(response => response.json())
-          .then(response => {
+        return fetch(
+          `//api.bilibili.com/x/relation/followings?&pn=${page}&ps=${PER_PAGE}&vmid=${DedeUserID}&order=desc`,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }
+        )
+          .then((response) => response.json())
+          .then((response) => {
             return {
-              list: response.data.list.map(item => ({ ...item, id: item.mid })),
+              list: response.data.list.map((item) => ({
+                ...item,
+                id: item.mid,
+              })),
               total: response.data.total,
               pn: page,
-            }
+            };
           });
-      }
+      };
 
       const VideoItem = {
         props: ['item'],
         computed: {
           coverURL() {
             return this.item.cover.replace('http:', '');
-          }
+          },
         },
         template: `
           <a
@@ -105,9 +126,9 @@
               </div>
             </div>
           </a>
-        `
+        `,
       };
-      
+
       const UserItem = {
         props: ['item'],
         computed: {
@@ -116,7 +137,7 @@
           },
           avatarURL() {
             return this.item.face.replace('http:', '');
-          }
+          },
         },
         template: `
           <a
@@ -139,8 +160,8 @@
               </div>
             </div>
           </a>
-        `
-      }
+        `,
+      };
 
       new Vue({
         el: subscribeMenuEl,
@@ -175,15 +196,15 @@
                 page: 0,
                 component: 'UserItem',
               },
-            }
-          }
+            },
+          };
         },
         created() {
-          this.load()
+          this.load();
         },
         computed: {
           list() {
-            return this.dataset[this.activeTab].list
+            return this.dataset[this.activeTab].list;
           },
           total() {
             return this.dataset[this.activeTab].total;
@@ -193,7 +214,7 @@
           },
           tabComponent() {
             return this.dataset[this.activeTab].component;
-          }
+          },
         },
         methods: {
           async load() {
@@ -201,10 +222,10 @@
             let request;
             if (tab === 'bangumis') {
               request = getBangumis;
-            };
+            }
             if (tab === 'cinemas') {
-              request = getCinemas; 
-            };
+              request = getCinemas;
+            }
             if (tab === 'floowings') {
               request = getFloowings;
             }
@@ -226,12 +247,12 @@
               this.load();
             }
           },
-          onMouseoverHandler(){
+          onMouseoverHandler() {
             if (!this.inLeaveAnimation) {
               this.isPanelVisible = true;
             }
           },
-          onMouseleaveHandler(){
+          onMouseleaveHandler() {
             this.isPanelVisible = false;
           },
           onContentBeforeLeaveHandler() {
@@ -243,9 +264,10 @@
           onScrollHandler() {
             const panelContent = this.$refs.panelContent;
             if (
-              !this.loading
-              && this.list.length < this.total
-              && panelContent.scrollHeight - panelContent.scrollTop - 50 <= panelContent.clientHeight
+              !this.loading &&
+              this.list.length < this.total &&
+              panelContent.scrollHeight - panelContent.scrollTop - 50 <=
+                panelContent.clientHeight
             ) {
               this.load();
             }
@@ -303,19 +325,21 @@
         `,
       });
     } catch (error) {
-      log(error)
+      log(error);
     }
   } else {
     style();
-    getNavList().then(navList => main(navList));
+    getNavList().then((navList) => main(navList));
   }
 
   function getLastPopoverButton(count = 1) {
     if (count >= 30) {
-      return Promise.reject("获取顶部按列表超时")
+      return Promise.reject('获取顶部按列表超时');
     }
     return new Promise((resolve) => {
-      const popoverButtons = document.body.querySelectorAll('.bili-header .bili-header__bar .right-entry>.v-popover-wrap');
+      const popoverButtons = document.body.querySelectorAll(
+        '.bili-header .bili-header__bar .right-entry>.v-popover-wrap'
+      );
       if (popoverButtons.length) {
         resolve(popoverButtons[popoverButtons.length - 1]);
         return;
@@ -340,7 +364,7 @@
         },
         cover: {
           type: String,
-          required: true
+          required: true,
         },
         title: {
           type: String,
@@ -349,7 +373,7 @@
         tag: {
           type: String,
           required: true,
-        }
+        },
       },
       template: `
       <li>
@@ -364,7 +388,7 @@
         </a>
       </li>
       `,
-    }
+    };
 
     const List = {
       name: 'List',
@@ -373,7 +397,7 @@
         list: {
           type: Array,
           default: () => [],
-        }
+        },
       },
       template: `
       <ul ref="list">
@@ -387,7 +411,7 @@
         />
       </ul>
       `,
-    }
+    };
 
     const subscribe = new Vue({
       el: subscribeMenuEl,
@@ -401,13 +425,13 @@
         pages: {
           bangumi: -1,
           cinema: -1,
-          floowing: -1
-        },             // count of pages
+          floowing: -1,
+        }, // count of pages
         page: {
           bangumi: 1,
           cinema: 1,
-          floowing: 1
-        },              // current page
+          floowing: 1,
+        }, // current page
         perPage: 15,
         mid: '',
         activeTab: 'bangumi',
@@ -417,7 +441,7 @@
         this.mid = DedeUserID;
         this.getSubscribe(this.activeTab);
       },
-      updated(){
+      updated() {
         this.loadflag = true; // allow loading after update data
       },
       computed: {
@@ -426,22 +450,34 @@
         },
         list() {
           const key = this.activeTab;
-          if (key === 'bangumi') { return this.bangumis };
-          if (key === 'cinema') { return this.cinemas };
-          if (key === 'floowing') { return this.floowings }
+          if (key === 'bangumi') {
+            return this.bangumis;
+          }
+          if (key === 'cinema') {
+            return this.cinemas;
+          }
+          if (key === 'floowing') {
+            return this.floowings;
+          }
         },
-        href(){
+        href() {
           const urls = {
             bangumi: `//space.bilibili.com/${this.mid}/bangumi`,
-          }
+          };
           return urls[this.activeTab];
-        }
+        },
       },
       methods: {
         dataKey(key) {
-          if (key === 'bangumi') { return 'bangumis' };
-          if (key === 'cinema') { return 'cinemas' };
-          if (key === 'floowing') { return 'floowings' };
+          if (key === 'bangumi') {
+            return 'bangumis';
+          }
+          if (key === 'cinema') {
+            return 'cinemas';
+          }
+          if (key === 'floowing') {
+            return 'floowings';
+          }
         },
         switchTab(key) {
           this.activeTab = key;
@@ -456,7 +492,7 @@
           const urls = {
             bangumi: `//api.bilibili.com/x/space/bangumi/follow/list?type=1&follow_status=0&pn=${page}&ps=${this.perPage}&vmid=${this.mid}`,
             cinema: `//api.bilibili.com/x/space/bangumi/follow/list?type=2&follow_status=0&pn=${page}&ps=${this.perPage}&vmid=${this.mid}`,
-          }
+          };
           const url = urls[key];
           return fetch(url, {
             method: 'GET',
@@ -464,30 +500,32 @@
           })
             .then((response) => {
               if (response.ok) {
-                return response.json()
+                return response.json();
               } else {
-                return Promise.reject(new Error(`${response.url}: ${response.status}`))
+                return Promise.reject(
+                  new Error(`${response.url}: ${response.status}`)
+                );
               }
             })
             .then((data) => {
-              const newData = data.data.list.map(item => ({
+              const newData = data.data.list.map((item) => ({
                 id: item.season_id || item.media_id || item.mid,
                 link: item.url,
                 cover: item.cover,
                 title: item.title,
                 tag: item.new_ep.index_show,
               }));
-              this[dataKey] = [...this[dataKey], ...newData]
+              this[dataKey] = [...this[dataKey], ...newData];
               if (this.pages[key] <= 0) {
                 const total = data.data.total;
                 this.pages[key] = Math.ceil(total / this.perPage);
               }
               this.page[key]++;
-              log('Load successfully ^.^')
+              log('Load successfully ^.^');
             })
-            .catch(error => {
-              log(error)
-            })
+            .catch((error) => {
+              log(error);
+            });
         },
         getFloowings() {
           const key = 'floowing';
@@ -500,29 +538,31 @@
           })
             .then((response) => {
               if (response.ok) {
-                return response.json()
+                return response.json();
               } else {
-                return Promise.reject(new Error(`${response.url}: ${response.status}`))
+                return Promise.reject(
+                  new Error(`${response.url}: ${response.status}`)
+                );
               }
             })
             .then((data) => {
-              const newData = data.data.list.map(item => ({
+              const newData = data.data.list.map((item) => ({
                 link: `//space.bilibili.com/${item.mid}/`,
                 cover: item.face,
                 title: item.uname,
                 tag: '已关注',
               }));
-              this[dataKey] = [...this[dataKey], ...newData]
+              this[dataKey] = [...this[dataKey], ...newData];
               if (this.pages[key] <= 0) {
                 const total = data.data.total;
                 this.pages[key] = Math.ceil(total / this.perPage);
               }
               this.page[key]++;
-              log('Load successfully ^.^')
+              log('Load successfully ^.^');
             })
-            .catch(error => {
-              log(error)
-            })
+            .catch((error) => {
+              log(error);
+            });
         },
         getSubscribe(key) {
           switch (key) {
@@ -534,31 +574,32 @@
               break;
             case 'floowing':
               this.getFloowings();
-            default: 
+            default:
               break;
           }
         },
-        onmouseover(){
+        onmouseover() {
           this.$data.$_mouseOverTimer = setTimeout(() => {
             this.show = true;
             clearInterval(this.$data.$_mouseOverTimer);
           }, 100);
         },
-        onmouseleave(){
+        onmouseleave() {
           this.show = false;
           clearInterval(this.$data.$_mouseOverTimer);
         },
-        onscroll() {          
+        onscroll() {
           const key = this.activeTab;
           const list = this.$refs.list.$refs.list;
-          if(this.loadflag
-            && this.page[key] <= this.pages[key]
-            && list.scrollHeight - list.scrollTop - 50 <=  list.clientHeight
-            ){
-            this.loadflag = false;  // refuse to load
+          if (
+            this.loadflag &&
+            this.page[key] <= this.pages[key] &&
+            list.scrollHeight - list.scrollTop - 50 <= list.clientHeight
+          ) {
+            this.loadflag = false; // refuse to load
             this.getSubscribe(this.activeTab);
           }
-        }
+        },
       },
       template: `
         <div class="item"
@@ -582,29 +623,29 @@
           </transition>
         </div>
       `,
-    })
+    });
   }
 
   /**
    * get nav list on the right of header
-   * @param {Function} main 
+   * @param {Function} main
    */
-  function getNavList () {
+  function getNavList() {
     const userCenter = document.body.querySelector('.nav-user-center');
     return new Promise((resolve) => {
       if (userCenter) {
         const userNavMenu = userCenter.querySelector('.user-con.signin');
-        if(userNavMenu) {
+        if (userNavMenu) {
           // It can get userNavMenu direcyly without waiting at sometime
           // See detail at https://greasyfork.org/zh-CN/forum/discussion/76143/x
-          log("Get nav menu list directly");
+          log('Get nav menu list directly');
           resolve(userNavMenu);
         } else {
           const observer = new MutationObserver((mutations, observer) => {
             for (const mutation of mutations) {
               if (mutation.addedNodes.length > 0) {
                 const addedNode = mutation.addedNodes[0];
-                if(isNavList(addedNode)){
+                if (isNavList(addedNode)) {
                   log('Get nav menu list by observing');
                   resolve(addedNode);
                   observer.disconnect();
@@ -621,7 +662,9 @@
       } else {
         // Find user nav menu per 100ms
         const timer = setInterval(() => {
-          const userNavMenu = document.body.querySelector('.nav-user-center>.user-con.signin');
+          const userNavMenu = document.body.querySelector(
+            '.nav-user-center>.user-con.signin'
+          );
           if (userNavMenu) {
             log('Get nav menu list by timer');
             resolve(userNavMenu);
@@ -630,23 +673,22 @@
         }, 100);
       }
     });
-    
   }
 
   /**
    * check if specified node is the nav list
-   * @param {*} node 
-   * @returns {boolean}          - 
+   * @param {*} node
+   * @returns {boolean}          -
    */
   function isNavList(node) {
     if (
-      node
-      && node.tagName
-      && node.tagName.toLowerCase() === 'div'
-      && node.classList.contains('user-con') 
-      && node.classList.contains('signin')
+      node &&
+      node.tagName &&
+      node.tagName.toLowerCase() === 'div' &&
+      node.classList.contains('user-con') &&
+      node.classList.contains('signin')
     ) {
-      return true
+      return true;
     }
     return false;
   }
@@ -762,13 +804,13 @@
 
   /**
    * Get cookie by name
-   * @param {string} name 
+   * @param {string} name
    */
-  function getCookie(name){
-    const value = "; " + document.cookie;
-    let parts = value.split("; " + name + "=");
+  function getCookie(name) {
+    const value = '; ' + document.cookie;
+    let parts = value.split('; ' + name + '=');
     if (parts.length == 2) {
-      return parts.pop().split(";").shift();
+      return parts.pop().split(';').shift();
     }
     return '';
   }
@@ -785,14 +827,18 @@
       /https:\/\/www.bilibili.com\/anime\/.*/,
       /https:\/\/search.bilibili.com\/.*/,
     ];
-    return blacklists.some(patten => patten.test(location.href));
+    return blacklists.some((patten) => patten.test(location.href));
   }
 
   /**
    * print something in console with custom style
-   * @param {*} stuff 
+   * @param {*} stuff
    */
   function log(stuff) {
-    console.log('%cbilibili订阅+:', 'background: #f25d8e; border-radius: 3px; color: #fff; padding: 0 8px', stuff);
+    console.log(
+      '%cbilibili订阅+:',
+      'background: #f25d8e; border-radius: 3px; color: #fff; padding: 0 8px',
+      stuff
+    );
   }
 })();
