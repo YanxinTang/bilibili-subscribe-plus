@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili订阅+
 // @namespace    https://github.com/YanxinTang/Tampermonkey
-// @version      0.7.6
+// @version      0.7.7
 // @description  bilibili导航添加订阅按钮以及订阅列表
 // @author       tyx1703
 // @license      MIT
