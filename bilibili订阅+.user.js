@@ -823,6 +823,7 @@
   function isInNewVersionBlacklist() {
     const blacklists = [
       /https:\/\/www.bilibili.com\/anime\/.*/,
+      /https:\/\/www.bilibili.com\/watchlater\/.*/,
     ];
     return blacklists.some((patten) => patten.test(location.href));
   }
