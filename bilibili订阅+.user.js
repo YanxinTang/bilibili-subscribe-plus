@@ -7,7 +7,7 @@
 // @license      MIT
 // @noframes
 // @require     https://cdn.jsdelivr.net/npm/vue@2/dist/vue.min.js
-// @include      *.bilibili.com/*
+// @match      *.bilibili.com/*
 // @exclude     *://live.bilibili.com/*
 // @exclude     *://manga.bilibili.com/*
 // @exclude     *://bw.bilibili.com/*
